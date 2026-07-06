@@ -8,7 +8,12 @@ export function setAccessToken(token: string | null) {
   accessToken = token
 }
 
-export const api = axios.create({ baseURL: '/api', withCredentials: true })
+// Same-origin '/api' by default (Vite dev proxy, or nginx reverse proxy in docker-compose).
+// Baked in at build time via VITE_API_BASE_URL when the frontend and backend are deployed
+// as separate origins (e.g. Railway) and the browser must call the backend directly.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
+export const api = axios.create({ baseURL: API_BASE, withCredentials: true })
 
 api.interceptors.request.use((config) => {
   if (accessToken) {
@@ -22,7 +27,7 @@ let refreshPromise: Promise<string | null> | null = null
 async function tryRefresh(): Promise<string | null> {
   if (!refreshPromise) {
     refreshPromise = axios
-      .post('/api/auth/refresh', null, { withCredentials: true })
+      .post(`${API_BASE}/auth/refresh`, null, { withCredentials: true })
       .then((res) => {
         const token = res.data.access_token as string
         setAccessToken(token)

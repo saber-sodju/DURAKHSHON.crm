@@ -6,6 +6,48 @@ attendance, payments, exams & grades, reports, notifications and role-based acce
 **Stack:** FastAPI · PostgreSQL · SQLAlchemy 2 · Alembic · React 19 + TypeScript · Tailwind CSS 4 ·
 TanStack Query · React Hook Form + Zod · Recharts · Docker Compose
 
+**Live demo (Railway):** https://frontend-production-be90.up.railway.app
+(demo users below, password `Demo1234!`)
+
+---
+
+## Deploying to Railway
+
+The project runs as three services in one Railway project: PostgreSQL, `backend`, `frontend`.
+Frontend and backend get their own public Railway domains, and the browser calls the backend
+directly (cross-origin) rather than through a server-side proxy — this sidesteps Railway's
+private networking between services, which was unreliable in testing.
+
+```bash
+railway login
+railway init                                    # creates the project
+railway add --database postgres
+
+railway add --service backend
+railway variable set ENVIRONMENT=production --service backend
+railway variable set SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')" --service backend
+railway variable set 'DATABASE_URL=postgresql+psycopg2://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}' --service backend
+railway variable set COOKIE_SECURE=true --service backend
+railway variable set COOKIE_SAMESITE=none --service backend   # frontend/backend are different origins
+railway up ./backend --path-as-root --service backend
+railway domain --service backend --port 8000    # note the generated URL
+
+railway add --service frontend
+railway variable set VITE_API_BASE_URL="https://<backend-domain>/api" --service frontend
+railway up ./frontend --path-as-root --service frontend
+railway domain --service frontend --port 80     # note the generated URL
+
+# now that both domains are known, close the loop:
+railway variable set CORS_ORIGINS="https://<frontend-domain>" --service backend
+```
+
+Notes:
+- `--path-as-root` is required for monorepo subfolders — without it Railway uploads the repo root.
+- `VITE_API_BASE_URL` is a **build-time** arg (see `frontend/Dockerfile`); leaving it unset makes
+  the frontend call the relative `/api` path instead, proxied by nginx — that's what happens in
+  the Docker Compose setup below, where frontend and backend share one origin.
+- Rotate `SECRET_KEY` and demo passwords before treating a deployment as more than a demo.
+
 ---
 
 ## Quick start (Docker)
@@ -108,7 +150,9 @@ attendance upsert, grade computation and payment status rules.
 
 - Passwords hashed with **Argon2**; `password_hash` never leaves the API.
 - **JWT access token** (30 min) returned in JSON and kept in memory on the client;
-  **refresh token** in a `httpOnly` + `SameSite=Lax` cookie scoped to `/api/auth`.
+  **refresh token** in a `httpOnly` cookie scoped to `/api/auth`. `SameSite=Lax` when
+  frontend and backend share an origin (Docker Compose); `SameSite=None` + `Secure`
+  when they're separate origins (Railway) — set via `COOKIE_SAMESITE`.
 - **Login rate limiting** (5 attempts/min per IP) + **account lockout**
   (10 failed attempts → 15 min).
 - **RBAC** via dependencies plus per-object ownership checks against IDOR.

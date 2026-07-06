@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg2://durakhshon:durakhshon@localhost:5432/durakhshon"
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
     COOKIE_SECURE: bool = False  # set True in production (HTTPS)
+    COOKIE_SAMESITE: str = "lax"  # "none" when frontend and backend are on different origins (e.g. Railway); requires COOKIE_SECURE=true
     LOGIN_RATE_LIMIT_ATTEMPTS: int = 5
     LOGIN_RATE_LIMIT_WINDOW_SECONDS: int = 60
     LOCKOUT_THRESHOLD: int = 10
