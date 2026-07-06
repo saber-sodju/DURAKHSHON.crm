@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Search, UserPlus } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import type { Page, Parent, Student } from '../lib/types'
@@ -13,20 +14,19 @@ import {
   TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
 } from '../components/ui'
 
-const parentSchema = z.object({
-  first_name: z.string().min(1, 'Required'),
-  last_name: z.string().min(1, 'Required'),
-  phone: z.string(),
-  email: z.string().email().or(z.literal('')),
-  notes: z.string(),
-})
-
-type ParentForm = z.infer<typeof parentSchema>
+type ParentForm = {
+  first_name: string
+  last_name: string
+  phone: string
+  email: string
+  notes: string
+}
 
 const emptyForm: ParentForm = { first_name: '', last_name: '', phone: '', email: '', notes: '' }
 
 export default function Parents() {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
@@ -35,6 +35,14 @@ export default function Parents() {
   const [editing, setEditing] = useState<Parent | null>(null)
   const [deleting, setDeleting] = useState<Parent | null>(null)
   const [childIds, setChildIds] = useState<number[]>([])
+
+  const parentSchema = z.object({
+    first_name: z.string().min(1, t('settings.required')),
+    last_name: z.string().min(1, t('settings.required')),
+    phone: z.string(),
+    email: z.string().email().or(z.literal('')),
+    notes: z.string(),
+  })
 
   const { register, handleSubmit, reset, formState } = useForm<ParentForm>({
     resolver: zodResolver(parentSchema), defaultValues: emptyForm,
@@ -61,7 +69,7 @@ export default function Parents() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parents'] })
       queryClient.invalidateQueries({ queryKey: ['students'] })
-      toast(editing ? 'Parent updated' : 'Parent created')
+      toast(editing ? t('toasts.parentUpdated') : t('toasts.parentCreated'))
       setModalOpen(false)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -71,7 +79,7 @@ export default function Parents() {
     mutationFn: async (parent: Parent) => (await api.delete(`/parents/${parent.id}`)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parents'] })
-      toast('Parent deleted')
+      toast(t('toasts.parentDeleted'))
       setDeleting(null)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -84,46 +92,47 @@ export default function Parents() {
     setModalOpen(true)
   }
 
-  function openEdit(p: Parent) {
-    setEditing(p)
-    setChildIds(p.children.map((c) => c.id))
-    reset({ first_name: p.first_name, last_name: p.last_name, phone: p.phone, email: p.email, notes: p.notes })
+  function openEdit(parent: Parent) {
+    setEditing(parent)
+    setChildIds(parent.children.map((c) => c.id))
+    reset({ first_name: parent.first_name, last_name: parent.last_name, phone: parent.phone, email: parent.email, notes: parent.notes })
     setModalOpen(true)
   }
 
   return (
     <>
-      <PageHeader title="Parents" subtitle="All parent contacts"
-                  actions={<Button onClick={openCreate}><UserPlus size={16} /> Add Parent</Button>} />
+      <PageHeader title={t('parents.title')} subtitle={t('parents.subtitle')}
+                  actions={<Button onClick={openCreate}><UserPlus size={16} /> {t('parents.addParent')}</Button>} />
       <Card>
         <form className="flex flex-wrap gap-2 border-b border-slate-200 p-4"
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
-          <Input className="max-w-xs" placeholder="Search..." value={searchInput}
+          <Input className="max-w-xs" placeholder={t('parents.searchPlaceholder')} value={searchInput}
                  onChange={(e) => setSearchInput(e.target.value)} />
-          <Button type="submit" variant="secondary"><Search size={15} /> Search</Button>
+          <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
         {isLoading ? <TableSkeleton cols={5} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No parents found" />
+          <EmptyState title={t('parents.noParentsFound')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
                 <tr>
-                  <Th>#</Th><Th>Name</Th><Th>Phone</Th><Th>Email</Th><Th>Children</Th>
-                  <Th className="text-right">Actions</Th>
+                  <Th>#</Th><Th>{t('students.columnName')}</Th><Th>{t('students.columnPhone')}</Th>
+                  <Th>{t('parents.columnEmail')}</Th><Th>{t('parents.columnChildren')}</Th>
+                  <Th className="text-right">{t('common.actions')}</Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.items.map((p, i) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
+                {data.items.map((parent, i) => (
+                  <tr key={parent.id} className="hover:bg-slate-50">
                     <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td className="font-semibold text-slate-800">{p.first_name} {p.last_name}</Td>
-                    <Td>{p.phone || '—'}</Td>
-                    <Td>{p.email || '—'}</Td>
+                    <Td className="font-semibold text-slate-800">{parent.first_name} {parent.last_name}</Td>
+                    <Td>{parent.phone || '—'}</Td>
+                    <Td>{parent.email || '—'}</Td>
                     <Td>
                       <div className="flex flex-wrap gap-1">
-                        {p.children.map((c) => (
+                        {parent.children.map((c) => (
                           <span key={c.id} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
                             {c.first_name} {c.last_name}
                           </span>
@@ -132,10 +141,10 @@ export default function Parents() {
                     </Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Edit">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(parent)} title={t('common.edit')}>
                           <Pencil size={15} className="text-blue-600" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} title="Delete">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleting(parent)} title={t('common.delete')}>
                           <Trash2 size={15} className="text-red-500" />
                         </Button>
                       </div>
@@ -150,19 +159,19 @@ export default function Parents() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? 'Edit Parent' : 'Add Parent'}>
+             title={editing ? t('parents.editParent') : t('parents.addParentTitle')}>
         <form onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" required error={formState.errors.first_name?.message}>
+            <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
               <Input {...register('first_name')} />
             </Field>
-            <Field label="Last name" required error={formState.errors.last_name?.message}>
+            <Field label={t('students.lastName')} required error={formState.errors.last_name?.message}>
               <Input {...register('last_name')} />
             </Field>
-            <Field label="Phone"><Input {...register('phone')} /></Field>
-            <Field label="Email" error={formState.errors.email?.message}><Input {...register('email')} /></Field>
+            <Field label={t('students.phone')}><Input {...register('phone')} /></Field>
+            <Field label={t('students.email')} error={formState.errors.email?.message}><Input {...register('email')} /></Field>
           </div>
-          <Field label="Children">
+          <Field label={t('parents.children')}>
             <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-lg border border-slate-200 p-2.5">
               {(students?.items ?? []).map((s) => {
                 const checked = childIds.includes(s.id)
@@ -176,13 +185,13 @@ export default function Parents() {
                   </button>
                 )
               })}
-              {(students?.items ?? []).length === 0 && <p className="text-xs text-slate-400">No students yet.</p>}
+              {(students?.items ?? []).length === 0 && <p className="text-xs text-slate-400">{t('parents.noStudentsHint')}</p>}
             </div>
           </Field>
-          <Field label="Notes"><Textarea {...register('notes')} /></Field>
+          <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={saveMutation.isPending}>{editing ? 'Save changes' : 'Create parent'}</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('parents.createParent')}</Button>
           </div>
         </form>
       </Modal>
@@ -192,8 +201,8 @@ export default function Parents() {
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && deleteMutation.mutate(deleting)}
         loading={deleteMutation.isPending}
-        title="Delete parent?"
-        message={`${deleting?.first_name} ${deleting?.last_name} will be removed. Children stay in the system.`}
+        title={t('confirm.deleteParentTitle')}
+        message={t('confirm.deleteParentMessage', { name: `${deleting?.first_name} ${deleting?.last_name}` })}
       />
     </>
   )

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Users, BookUser, Boxes, Wallet, UserPlus, CalendarPlus, ClipboardCheck, BadgeDollarSign,
 } from 'lucide-react'
@@ -52,10 +53,11 @@ interface Charts {
 }
 
 function AttendanceTodayCards({ stats }: { stats: Record<string, number> }) {
+  const { t } = useTranslation()
   const cards = [
-    { key: 'present', label: 'Today — Present', color: 'border-emerald-500 text-emerald-600' },
-    { key: 'absent', label: 'Today — Absent', color: 'border-red-500 text-red-600' },
-    { key: 'late', label: 'Today — Late', color: 'border-amber-500 text-amber-600' },
+    { key: 'present', label: t('dashboard.todayPresent'), color: 'border-emerald-500 text-emerald-600' },
+    { key: 'absent', label: t('dashboard.todayAbsent'), color: 'border-red-500 text-red-600' },
+    { key: 'late', label: t('dashboard.todayLate'), color: 'border-amber-500 text-amber-600' },
   ]
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -72,6 +74,7 @@ function AttendanceTodayCards({ stats }: { stats: Record<string, number> }) {
 function StaffDashboard({ data }: { data: StaffDash }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
   const { data: charts } = useQuery({
     queryKey: ['reports', 'charts'],
     queryFn: async () => (await api.get<Charts>('/reports/charts')).data,
@@ -82,18 +85,18 @@ function StaffDashboard({ data }: { data: StaffDash }) {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${user?.full_name || user?.username}!`}
-        subtitle="Here's what's happening at the learning center today."
+        title={t('dashboard.staffTitle', { name: user?.full_name || user?.username })}
+        subtitle={t('dashboard.staffSubtitle')}
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={<Users size={22} className="text-blue-600" />} accent="bg-blue-50"
-                  value={data.active_students} label="Active Students" />
+                  value={data.active_students} label={t('dashboard.activeStudents')} />
         <StatCard icon={<BookUser size={22} className="text-emerald-600" />} accent="bg-emerald-50"
-                  value={data.active_teachers} label="Active Teachers" />
+                  value={data.active_teachers} label={t('dashboard.activeTeachers')} />
         <StatCard icon={<Boxes size={22} className="text-cyan-600" />} accent="bg-cyan-50"
-                  value={data.active_groups} label="Active Groups" />
+                  value={data.active_groups} label={t('dashboard.activeGroups')} />
         <StatCard icon={<Wallet size={22} className="text-amber-600" />} accent="bg-amber-50"
-                  value={`${paid} / ${unpaidTotal}`} label="Paid / Unpaid (this month)" />
+                  value={`${paid} / ${unpaidTotal}`} label={t('dashboard.paidUnpaidMonth')} />
       </div>
 
       <div className="mt-6">
@@ -103,12 +106,12 @@ function StaffDashboard({ data }: { data: StaffDash }) {
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
           <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="font-bold text-slate-800">Recent Students</h2>
-            <Link to="/students"><Button variant="secondary" size="sm">View All</Button></Link>
+            <h2 className="font-bold text-slate-800">{t('dashboard.recentStudents')}</h2>
+            <Link to="/students"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
-          {data.recent_students.length === 0 ? <EmptyState title="No students yet" /> : (
+          {data.recent_students.length === 0 ? <EmptyState title={t('dashboard.noStudentsYet')} /> : (
             <TableShell>
-              <thead><tr><Th>Name</Th><Th>Parent</Th><Th>Status</Th></tr></thead>
+              <thead><tr><Th>{t('students.columnName')}</Th><Th>{t('students.columnParent')}</Th><Th>{t('common.status')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.recent_students.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50">
@@ -128,12 +131,12 @@ function StaffDashboard({ data }: { data: StaffDash }) {
 
         <Card>
           <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="font-bold text-slate-800">Recent Payments</h2>
-            <Link to="/payments"><Button variant="secondary" size="sm">View All</Button></Link>
+            <h2 className="font-bold text-slate-800">{t('dashboard.recentPayments')}</h2>
+            <Link to="/payments"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
-          {data.recent_payments.length === 0 ? <EmptyState title="No payments yet" /> : (
+          {data.recent_payments.length === 0 ? <EmptyState title={t('dashboard.noPaymentsYet')} /> : (
             <TableShell>
-              <thead><tr><Th>Student</Th><Th>Group</Th><Th>Amount</Th><Th>Status</Th></tr></thead>
+              <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnGroup')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('common.status')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.recent_payments.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
@@ -151,7 +154,7 @@ function StaffDashboard({ data }: { data: StaffDash }) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card className="p-5">
-          <h2 className="mb-4 font-bold text-slate-800">Monthly Payments</h2>
+          <h2 className="mb-4 font-bold text-slate-800">{t('dashboard.monthlyPayments')}</h2>
           <div className="h-64">
             <ResponsiveContainer>
               <BarChart data={charts?.payments_by_month ?? []}>
@@ -160,14 +163,14 @@ function StaffDashboard({ data }: { data: StaffDash }) {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="expected" name="Expected" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="collected" name="Collected" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expected" name={t('dashboard.expected')} fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="collected" name={t('dashboard.collected')} fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
         <Card className="p-5">
-          <h2 className="mb-4 font-bold text-slate-800">Attendance Trend (14 days)</h2>
+          <h2 className="mb-4 font-bold text-slate-800">{t('dashboard.attendanceTrend')}</h2>
           <div className="h-64">
             <ResponsiveContainer>
               <LineChart data={charts?.attendance_trend ?? []}>
@@ -187,10 +190,10 @@ function StaffDashboard({ data }: { data: StaffDash }) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
-          <h2 className="px-5 pt-4 font-bold text-slate-800">Today's Classes</h2>
-          {data.todays_classes.length === 0 ? <EmptyState title="No classes today" /> : (
+          <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.todaysClasses')}</h2>
+          {data.todays_classes.length === 0 ? <EmptyState title={t('dashboard.noClassesToday')} /> : (
             <TableShell>
-              <thead><tr><Th>Group</Th><Th>Time</Th><Th>Teacher</Th><Th>Room</Th></tr></thead>
+              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groups.columnTeacher')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.todays_classes.map((c, i) => (
                   <tr key={i} className="hover:bg-slate-50">
@@ -205,10 +208,10 @@ function StaffDashboard({ data }: { data: StaffDash }) {
           )}
         </Card>
         <Card>
-          <h2 className="px-5 pt-4 font-bold text-slate-800">Upcoming Payments</h2>
-          {data.upcoming_payments.length === 0 ? <EmptyState title="Nothing due soon" /> : (
+          <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.upcomingPayments')}</h2>
+          {data.upcoming_payments.length === 0 ? <EmptyState title={t('dashboard.nothingDueSoon')} /> : (
             <TableShell>
-              <thead><tr><Th>Student</Th><Th>Amount Due</Th><Th>Due Date</Th></tr></thead>
+              <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('payments.dueDate')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.upcoming_payments.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
@@ -224,13 +227,13 @@ function StaffDashboard({ data }: { data: StaffDash }) {
       </div>
 
       <Card className="mt-6 p-5">
-        <h2 className="mb-3 font-bold text-slate-800">Quick Actions</h2>
+        <h2 className="mb-3 font-bold text-slate-800">{t('dashboard.quickActions')}</h2>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => navigate('/students?new=1')}><UserPlus size={15} /> Add Student</Button>
-          <Button variant="success" onClick={() => navigate('/teachers?new=1')}><BookUser size={15} /> Add Teacher</Button>
-          <Button variant="secondary" onClick={() => navigate('/groups?new=1')}><CalendarPlus size={15} /> Add Group</Button>
-          <Button variant="secondary" onClick={() => navigate('/payments?new=1')}><BadgeDollarSign size={15} /> Add Payment</Button>
-          <Button variant="secondary" onClick={() => navigate('/attendance')}><ClipboardCheck size={15} /> Attendance Report</Button>
+          <Button onClick={() => navigate('/students?new=1')}><UserPlus size={15} /> {t('dashboard.addStudent')}</Button>
+          <Button variant="success" onClick={() => navigate('/teachers?new=1')}><BookUser size={15} /> {t('dashboard.addTeacher')}</Button>
+          <Button variant="secondary" onClick={() => navigate('/groups?new=1')}><CalendarPlus size={15} /> {t('dashboard.addGroup')}</Button>
+          <Button variant="secondary" onClick={() => navigate('/payments?new=1')}><BadgeDollarSign size={15} /> {t('dashboard.addPayment')}</Button>
+          <Button variant="secondary" onClick={() => navigate('/attendance')}><ClipboardCheck size={15} /> {t('dashboard.attendanceReport')}</Button>
         </div>
       </Card>
     </>
@@ -240,19 +243,20 @@ function StaffDashboard({ data }: { data: StaffDash }) {
 function TeacherDashboard({ data }: { data: TeacherDash }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
   return (
     <>
-      <PageHeader title={`Welcome, ${user?.full_name || user?.username}!`} subtitle="Your teaching overview for today." />
+      <PageHeader title={t('dashboard.teacherWelcome', { name: user?.full_name || user?.username })} subtitle={t('dashboard.teacherSubtitle')} />
       <AttendanceTodayCards stats={data.attendance_today} />
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
           <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="font-bold text-slate-800">My Groups</h2>
-            <Link to="/groups"><Button variant="secondary" size="sm">View All</Button></Link>
+            <h2 className="font-bold text-slate-800">{t('dashboard.myGroups')}</h2>
+            <Link to="/groups"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
-          {data.my_groups.length === 0 ? <EmptyState title="No groups assigned" /> : (
+          {data.my_groups.length === 0 ? <EmptyState title={t('dashboard.noGroupsAssigned')} /> : (
             <TableShell>
-              <thead><tr><Th>Group</Th><Th>Course</Th><Th>Students</Th></tr></thead>
+              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groups.columnCourse')}</Th><Th>{t('groups.columnStudents')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.my_groups.map((g) => (
                   <tr key={g.id} className="hover:bg-slate-50">
@@ -268,10 +272,10 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
           )}
         </Card>
         <Card>
-          <h2 className="px-5 pt-4 font-bold text-slate-800">Today's Lessons</h2>
-          {data.todays_lessons.length === 0 ? <EmptyState title="No lessons today" /> : (
+          <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.todaysLessons')}</h2>
+          {data.todays_lessons.length === 0 ? <EmptyState title={t('dashboard.noLessonsToday')} /> : (
             <TableShell>
-              <thead><tr><Th>Group</Th><Th>Time</Th><Th>Room</Th></tr></thead>
+              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {data.todays_lessons.map((lesson, i) => (
                   <tr key={i} className="hover:bg-slate-50">
@@ -286,10 +290,10 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
         </Card>
       </div>
       <Card className="mt-6">
-        <h2 className="px-5 pt-4 font-bold text-slate-800">Recent Grades</h2>
-        {data.recent_grades.length === 0 ? <EmptyState title="No grades yet" /> : (
+        <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.recentGrades')}</h2>
+        {data.recent_grades.length === 0 ? <EmptyState title={t('dashboard.noGradesYet')} /> : (
           <TableShell>
-            <thead><tr><Th>Student</Th><Th>Exam</Th><Th>Score</Th><Th>%</Th></tr></thead>
+            <thead><tr><Th>{t('grades.columnStudent')}</Th><Th>{t('grades.columnExam')}</Th><Th>{t('grades.columnScore')}</Th><Th>%</Th></tr></thead>
             <tbody className="divide-y divide-slate-100">
               {data.recent_grades.map((g, i) => (
                 <tr key={i} className="hover:bg-slate-50">
@@ -304,10 +308,10 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
         )}
       </Card>
       <Card className="mt-6 p-5">
-        <h2 className="mb-3 font-bold text-slate-800">Quick Actions</h2>
+        <h2 className="mb-3 font-bold text-slate-800">{t('dashboard.quickActions')}</h2>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => navigate('/attendance?mark=1')}><ClipboardCheck size={15} /> Mark Attendance</Button>
-          <Button variant="secondary" onClick={() => navigate('/exams')}>Add Exam Result</Button>
+          <Button onClick={() => navigate('/attendance?mark=1')}><ClipboardCheck size={15} /> {t('dashboard.markAttendance')}</Button>
+          <Button variant="secondary" onClick={() => navigate('/exams')}>{t('dashboard.addExamResult')}</Button>
         </div>
       </Card>
     </>
@@ -315,6 +319,7 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
 }
 
 function StudentCard({ payload, title }: { payload: StudentPayload; title?: string }) {
+  const { t } = useTranslation()
   return (
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -329,18 +334,18 @@ function StudentCard({ payload, title }: { payload: StudentPayload; title?: stri
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg bg-slate-50 p-4">
-          <div className="text-xs font-semibold uppercase text-slate-500">Attendance</div>
+          <div className="text-xs font-semibold uppercase text-slate-500">{t('dashboard.attendanceLabel')}</div>
           <div className="mt-1 text-2xl font-extrabold text-slate-800">
             {payload.attendance.percentage !== null ? `${payload.attendance.percentage}%` : '—'}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            {payload.attendance.present} present · {payload.attendance.absent} absent · {payload.attendance.late} late
+            {payload.attendance.present} {t('common.badge.present').toLowerCase()} · {payload.attendance.absent} {t('common.badge.absent').toLowerCase()} · {payload.attendance.late} {t('common.badge.late').toLowerCase()}
           </div>
         </div>
         <div className="rounded-lg bg-slate-50 p-4">
-          <div className="text-xs font-semibold uppercase text-slate-500">Latest Grades</div>
+          <div className="text-xs font-semibold uppercase text-slate-500">{t('dashboard.latestGrades')}</div>
           {payload.recent_grades.length === 0 ? (
-            <div className="mt-2 text-sm text-slate-400">No grades yet</div>
+            <div className="mt-2 text-sm text-slate-400">{t('dashboard.noGradesYet')}</div>
           ) : (
             <ul className="mt-1.5 space-y-1">
               {payload.recent_grades.slice(0, 3).map((g, i) => (
@@ -353,18 +358,18 @@ function StudentCard({ payload, title }: { payload: StudentPayload; title?: stri
           )}
         </div>
         <div className="rounded-lg bg-slate-50 p-4">
-          <div className="text-xs font-semibold uppercase text-slate-500">Next Payment</div>
+          <div className="text-xs font-semibold uppercase text-slate-500">{t('dashboard.nextPayment')}</div>
           {payload.next_payment ? (
             <>
               <div className="mt-1 text-2xl font-extrabold text-slate-800">
                 {formatMoney(payload.next_payment.amount_due)}
               </div>
               <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                due {formatDate(payload.next_payment.due_date)} <Badge value={payload.next_payment.status} />
+                {t('dashboard.due')} {formatDate(payload.next_payment.due_date)} <Badge value={payload.next_payment.status} />
               </div>
             </>
           ) : (
-            <div className="mt-2 text-sm text-emerald-600 font-semibold">All paid ✓</div>
+            <div className="mt-2 text-sm text-emerald-600 font-semibold">{t('dashboard.allPaid')}</div>
           )}
         </div>
       </div>
@@ -373,6 +378,7 @@ function StudentCard({ payload, title }: { payload: StudentPayload; title?: stri
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation()
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => (await api.get<Dash>('/dashboard')).data,
@@ -393,16 +399,16 @@ export default function Dashboard() {
   if (data.role === 'student') {
     return (
       <>
-        <PageHeader title="My Dashboard" subtitle="Your progress at a glance." />
-        <StudentCard payload={data.me} title="My Overview" />
+        <PageHeader title={t('dashboard.myDashboard')} subtitle={t('dashboard.myDashboardSubtitle')} />
+        <StudentCard payload={data.me} title={t('dashboard.myOverview')} />
       </>
     )
   }
   return (
     <>
-      <PageHeader title="My Children" subtitle="Progress of each of your children." />
+      <PageHeader title={t('dashboard.myChildren')} subtitle={t('dashboard.myChildrenSubtitle')} />
       <div className="space-y-5">
-        {data.children.length === 0 && <Card><EmptyState title="No children linked to your account" /></Card>}
+        {data.children.length === 0 && <Card><EmptyState title={t('dashboard.noChildrenLinked')} /></Card>}
         {data.children.map((c) => <StudentCard key={c.id} payload={c} />)}
       </div>
     </>

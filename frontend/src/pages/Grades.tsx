@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import type { Page, Grade } from '../lib/types'
 import { formatDate } from '../lib/utils'
@@ -7,6 +8,7 @@ import PageHeader from '../components/PageHeader'
 import { Card, TableShell, Th, Td, EmptyState, TableSkeleton, Pagination } from '../components/ui'
 
 export default function Grades() {
+  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery({
     queryKey: ['grades', { page }],
@@ -15,17 +17,17 @@ export default function Grades() {
 
   return (
     <>
-      <PageHeader title="Grades" subtitle="Exam results" />
+      <PageHeader title={t('grades.title')} subtitle={t('grades.subtitle')} />
       <Card>
         {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No grades yet" />
+          <EmptyState title={t('grades.noGradesYet')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
                 <tr>
-                  <Th>Student</Th><Th>Exam</Th><Th>Group</Th><Th>Date</Th>
-                  <Th>Score</Th><Th>%</Th><Th>Grade</Th><Th>Comment</Th>
+                  <Th>{t('grades.columnStudent')}</Th><Th>{t('grades.columnExam')}</Th><Th>{t('grades.columnGroup')}</Th><Th>{t('grades.columnDate')}</Th>
+                  <Th>{t('grades.columnScore')}</Th><Th>%</Th><Th>{t('grades.columnGrade')}</Th><Th>{t('grades.columnComment')}</Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

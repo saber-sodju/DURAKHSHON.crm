@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Pencil, UserPlus, ShieldOff } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import type { Page, AppUser, AuditLog, RoleName, Student, Teacher, Parent } from '../lib/types'
@@ -28,6 +29,7 @@ const emptyDraft: UserDraft = {
 export default function UsersPage() {
   const { user: me } = useAuth()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isDirector = me?.role === 'director'
 
@@ -69,7 +71,7 @@ export default function UsersPage() {
 
   const profileOptions =
     draft.role === 'student' ? (students?.items ?? []).filter((s) => !s.user_id)
-    : draft.role === 'teacher' ? (teachers?.items ?? []).filter((t) => !t.user_id)
+    : draft.role === 'teacher' ? (teachers?.items ?? []).filter((teacher) => !teacher.user_id)
     : draft.role === 'parent' ? (parents?.items ?? []).filter((p) => !p.user_id)
     : []
 
@@ -90,7 +92,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast(editing ? 'User updated' : 'User created')
+      toast(editing ? t('toasts.userUpdated') : t('toasts.userCreated'))
       setModalOpen(false)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -100,7 +102,7 @@ export default function UsersPage() {
     mutationFn: async (u: AppUser) => (await api.delete(`/users/${u.id}`)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast('User deactivated')
+      toast(t('toasts.userDeactivated'))
       setDeactivating(null)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -125,30 +127,31 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Users & Roles" subtitle="Accounts, roles and audit trail"
-                  actions={<Button onClick={openCreate}><UserPlus size={16} /> Add User</Button>} />
+      <PageHeader title={t('users.title')} subtitle={t('users.subtitle')}
+                  actions={<Button onClick={openCreate}><UserPlus size={16} /> {t('users.addUser')}</Button>} />
       <Card>
         <div className="flex gap-1 border-b border-slate-200 px-4 pt-3">
-          {(['users', 'audit'] as const).map((t) => (
-            <button key={t} onClick={() => { setTab(t); setPage(1) }}
+          {(['users', 'audit'] as const).map((tabKey) => (
+            <button key={tabKey} onClick={() => { setTab(tabKey); setPage(1) }}
                     className={`rounded-t-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                      tab === t ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'
+                      tab === tabKey ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700'
                     }`}>
-              {t === 'users' ? 'Users' : 'Audit Log'}
+              {tabKey === 'users' ? t('users.tabUsers') : t('users.tabAudit')}
             </button>
           ))}
         </div>
 
         {tab === 'users' ? (
           isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-            <EmptyState title="No users" />
+            <EmptyState title={t('users.noUsers')} />
           ) : (
             <>
               <TableShell>
                 <thead className="bg-slate-50">
                   <tr>
-                    <Th>Username</Th><Th>Full name</Th><Th>Email</Th><Th>Role</Th><Th>Status</Th><Th>Created</Th>
-                    <Th className="text-right">Actions</Th>
+                    <Th>{t('users.columnUsername')}</Th><Th>{t('users.columnFullName')}</Th><Th>{t('users.columnEmail')}</Th>
+                    <Th>{t('users.columnRole')}</Th><Th>{t('users.columnStatus')}</Th><Th>{t('users.columnCreated')}</Th>
+                    <Th className="text-right">{t('common.actions')}</Th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -162,11 +165,11 @@ export default function UsersPage() {
                       <Td>{formatDate(u.created_at)}</Td>
                       <Td className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(u)} title="Edit">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(u)} title={t('common.edit')}>
                             <Pencil size={15} className="text-blue-600" />
                           </Button>
                           {isDirector && u.role !== 'director' && u.is_active && (
-                            <Button variant="ghost" size="sm" onClick={() => setDeactivating(u)} title="Deactivate">
+                            <Button variant="ghost" size="sm" onClick={() => setDeactivating(u)} title={t('common.deactivate')}>
                               <ShieldOff size={15} className="text-red-500" />
                             </Button>
                           )}
@@ -181,12 +184,15 @@ export default function UsersPage() {
           )
         ) : (
           auditLoading ? <TableSkeleton cols={6} /> : !audit || audit.items.length === 0 ? (
-            <EmptyState title="No audit records" />
+            <EmptyState title={t('users.noAuditRecords')} />
           ) : (
             <>
               <TableShell>
                 <thead className="bg-slate-50">
-                  <tr><Th>Time</Th><Th>User</Th><Th>Action</Th><Th>Entity</Th><Th>Detail</Th><Th>IP</Th></tr>
+                  <tr>
+                    <Th>{t('users.columnTime')}</Th><Th>{t('users.columnUser')}</Th><Th>{t('users.columnAction')}</Th>
+                    <Th>{t('users.columnEntity')}</Th><Th>{t('users.columnDetail')}</Th><Th>{t('users.columnIp')}</Th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {audit.items.map((log) => (
@@ -208,27 +214,27 @@ export default function UsersPage() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? `Edit User — ${editing.username}` : 'Add User'}>
+             title={editing ? t('users.editUser', { username: editing.username }) : t('users.addUserTitle')}>
         <div className="space-y-4">
           {!editing && (
             <>
-              <Field label="Username" required>
+              <Field label={t('users.username')} required>
                 <Input value={draft.username} onChange={(e) => setDraft({ ...draft, username: e.target.value })} />
               </Field>
-              <Field label="Role" required>
+              <Field label={t('users.role')} required>
                 <Select value={draft.role}
                         onChange={(e) => setDraft({ ...draft, role: e.target.value as RoleName, profile_id: '' })}>
-                  <option value="student">Student</option>
-                  <option value="parent">Parent</option>
-                  <option value="teacher">Teacher</option>
-                  {isDirector && <option value="admin">Admin</option>}
-                  {isDirector && <option value="director">Director</option>}
+                  <option value="student">{t('users.roleStudent')}</option>
+                  <option value="parent">{t('users.roleParent')}</option>
+                  <option value="teacher">{t('users.roleTeacher')}</option>
+                  {isDirector && <option value="admin">{t('users.roleAdmin')}</option>}
+                  {isDirector && <option value="director">{t('users.roleDirector')}</option>}
                 </Select>
               </Field>
               {['student', 'teacher', 'parent'].includes(draft.role) && (
-                <Field label="Link to existing profile">
+                <Field label={t('users.linkProfile')}>
                   <Select value={draft.profile_id} onChange={(e) => setDraft({ ...draft, profile_id: e.target.value })}>
-                    <option value="">— No profile link —</option>
+                    <option value="">{t('users.noProfileLink')}</option>
                     {profileOptions.map((p) => (
                       <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                     ))}
@@ -237,21 +243,21 @@ export default function UsersPage() {
               )}
             </>
           )}
-          <Field label="Full name">
+          <Field label={t('users.fullName')}>
             <Input value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} />
           </Field>
-          <Field label="Email">
+          <Field label={t('users.email')}>
             <Input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
           </Field>
-          <Field label={editing ? 'New password (leave blank to keep current)' : 'Password (min 8 chars)'}
+          <Field label={editing ? t('users.newPasswordHint') : t('users.passwordHint')}
                  required={!editing}>
             <Input type="password" value={draft.password}
                    onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
           </Field>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
             <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-              {editing ? 'Save changes' : 'Create user'}
+              {editing ? t('common.saveChanges') : t('users.createUser')}
             </Button>
           </div>
         </div>
@@ -262,8 +268,8 @@ export default function UsersPage() {
         onClose={() => setDeactivating(null)}
         onConfirm={() => deactivating && deactivateMutation.mutate(deactivating)}
         loading={deactivateMutation.isPending}
-        title="Deactivate user?"
-        message={`${deactivating?.username} will no longer be able to sign in.`}
+        title={t('confirm.deactivateUserTitle')}
+        message={t('confirm.deactivateUserMessage', { username: deactivating?.username })}
       />
     </>
   )

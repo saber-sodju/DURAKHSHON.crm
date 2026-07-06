@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { ClipboardCheck, Filter } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import type { Page, AttendanceRecord, Group } from '../lib/types'
@@ -21,6 +22,7 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
   initialGroupId?: string | null
 }) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [groupId, setGroupId] = useState(initialGroupId ?? '')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -67,24 +69,24 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      toast('Attendance saved')
+      toast(t('toasts.attendanceSaved'))
       onClose()
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Mark Attendance" wide>
+    <Modal open={open} onClose={onClose} title={t('attendance.modalTitle')} wide>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Group" required>
+        <Field label={t('attendance.group')} required>
           <Select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">— Select group —</option>
+            <option value="">{t('attendance.selectGroup')}</option>
             {groups?.items.filter((g) => g.status === 'active').map((g) => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </Select>
         </Field>
-        <Field label="Date" required>
+        <Field label={t('attendance.date')} required>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
       </div>
@@ -92,7 +94,7 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
       {group && (
         <div className="mt-4 max-h-96 overflow-y-auto rounded-lg border border-slate-200">
           {group.students.length === 0 ? (
-            <p className="p-4 text-sm text-slate-400">This group has no students.</p>
+            <p className="p-4 text-sm text-slate-400">{t('attendance.noStudentsInGroup')}</p>
           ) : group.students.map((s) => (
             <div key={s.id} className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-3 py-2.5 last:border-0">
               <span className="w-40 text-sm font-semibold text-slate-700">{s.first_name} {s.last_name}</span>
@@ -100,7 +102,7 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
                 {STATUSES.map((st) => (
                   <button key={st} type="button"
                           onClick={() => setMarks({ ...marks, [s.id]: { ...(marks[s.id] ?? { note: '' }), status: st } })}
-                          className={`rounded-md px-2 py-1 text-xs font-semibold capitalize transition-colors ${
+                          className={`rounded-md px-2 py-1 text-xs font-semibold transition-colors ${
                             marks[s.id]?.status === st
                               ? st === 'present' ? 'bg-emerald-600 text-white'
                                 : st === 'absent' ? 'bg-red-600 text-white'
@@ -108,11 +110,11 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
                                 : 'bg-blue-600 text-white'
                               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                           }`}>
-                    {st}
+                    {t(`common.badge.${st}`)}
                   </button>
                 ))}
               </div>
-              <Input className="min-w-32 flex-1" placeholder="Note (optional)"
+              <Input className="min-w-32 flex-1" placeholder={t('attendance.notePlaceholder')}
                      value={marks[s.id]?.note ?? ''}
                      onChange={(e) => setMarks({ ...marks, [s.id]: { ...(marks[s.id] ?? { status: 'present' }), note: e.target.value } })} />
             </div>
@@ -121,11 +123,11 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
       )}
 
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
         <Button disabled={!groupId || !group || group.students.length === 0}
                 loading={saveMutation.isPending}
                 onClick={() => saveMutation.mutate()}>
-          Save attendance
+          {t('attendance.saveAttendance')}
         </Button>
       </div>
     </Modal>
@@ -134,6 +136,7 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
 
 export default function Attendance() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const canMark = user?.role === 'director' || user?.role === 'admin' || user?.role === 'teacher'
   const isStaffOrTeacher = canMark
@@ -178,37 +181,41 @@ export default function Attendance() {
 
   return (
     <>
-      <PageHeader title="Attendance" subtitle="Filter and view all attendance records"
+      <PageHeader title={t('attendance.title')} subtitle={t('attendance.subtitle')}
                   actions={canMark && (
-                    <Button onClick={() => setMarkOpen(true)}><ClipboardCheck size={16} /> Mark Attendance</Button>
+                    <Button onClick={() => setMarkOpen(true)}><ClipboardCheck size={16} /> {t('attendance.markAttendance')}</Button>
                   )} />
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-4">
           {isStaffOrTeacher && (
             <Select className="w-44" value={groupFilter} onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>
-              <option value="">All Groups</option>
+              <option value="">{t('attendance.allGroups')}</option>
               {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
           )}
           <Select className="w-36" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            <option value="">{t('attendance.allStatuses')}</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{t(`common.badge.${s}`)}</option>)}
           </Select>
           <Input type="date" className="w-40" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} />
           <span className="text-slate-400">–</span>
           <Input type="date" className="w-40" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} />
           <span className="ml-auto hidden items-center gap-1 text-xs text-slate-400 sm:flex">
-            <Filter size={13} /> {data?.total ?? 0} records
+            <Filter size={13} /> {data?.total ?? 0} {t('attendance.records')}
           </span>
         </div>
 
         {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No attendance records" hint="Adjust the filters or mark attendance first." />
+          <EmptyState title={t('attendance.noRecords')} hint={t('attendance.noRecordsHint')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
-                <tr><Th>Student</Th><Th>Group</Th><Th>Teacher</Th><Th>Date</Th><Th>Status</Th><Th>Note</Th></tr>
+                <tr>
+                  <Th>{t('attendance.columnStudent')}</Th><Th>{t('attendance.columnGroup')}</Th>
+                  <Th>{t('attendance.columnTeacher')}</Th><Th>{t('attendance.columnDate')}</Th>
+                  <Th>{t('attendance.columnStatus')}</Th><Th>{t('attendance.columnNote')}</Th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.items.map((r) => (

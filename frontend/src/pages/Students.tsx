@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Search, UserPlus } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import type { Page, Student, Group, Parent } from '../lib/types'
@@ -15,19 +16,17 @@ import {
   TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
 } from '../components/ui'
 
-const studentSchema = z.object({
-  first_name: z.string().min(1, 'Required'),
-  last_name: z.string().min(1, 'Required'),
-  phone: z.string(),
-  email: z.string().email().or(z.literal('')),
-  date_of_birth: z.string().nullable(),
-  gender: z.string(),
-  status: z.enum(['active', 'inactive']),
-  enrollment_date: z.string().nullable(),
-  notes: z.string(),
-})
-
-type StudentForm = z.infer<typeof studentSchema>
+type StudentForm = {
+  first_name: string
+  last_name: string
+  phone: string
+  email: string
+  date_of_birth: string | null
+  gender: string
+  status: 'active' | 'inactive'
+  enrollment_date: string | null
+  notes: string
+}
 
 const emptyForm: StudentForm = {
   first_name: '', last_name: '', phone: '', email: '', date_of_birth: '',
@@ -65,6 +64,7 @@ function CheckboxList({ options, selected, onChange, empty }: {
 export default function Students() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const isStaff = user?.role === 'director' || user?.role === 'admin'
@@ -79,6 +79,18 @@ export default function Students() {
   const [deleting, setDeleting] = useState<Student | null>(null)
   const [parentIds, setParentIds] = useState<number[]>([])
   const [groupIds, setGroupIds] = useState<number[]>([])
+
+  const studentSchema = z.object({
+    first_name: z.string().min(1, t('settings.required')),
+    last_name: z.string().min(1, t('settings.required')),
+    phone: z.string(),
+    email: z.string().email().or(z.literal('')),
+    date_of_birth: z.string().nullable(),
+    gender: z.string(),
+    status: z.enum(['active', 'inactive']),
+    enrollment_date: z.string().nullable(),
+    notes: z.string(),
+  })
 
   const { register, handleSubmit, reset, formState } = useForm<StudentForm>({
     resolver: zodResolver(studentSchema), defaultValues: emptyForm,
@@ -130,7 +142,7 @@ export default function Students() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      toast(editing ? 'Student updated' : 'Student created')
+      toast(editing ? t('toasts.studentUpdated') : t('toasts.studentCreated'))
       setModalOpen(false)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -140,7 +152,7 @@ export default function Students() {
     mutationFn: async (student: Student) => (await api.delete(`/students/${student.id}`)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
-      toast('Student deactivated')
+      toast(t('toasts.studentDeactivated'))
       setDeleting(null)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -171,40 +183,41 @@ export default function Students() {
   return (
     <>
       <PageHeader
-        title="Students"
-        subtitle="Manage all enrolled students"
-        actions={isStaff && <Button onClick={openCreate}><UserPlus size={16} /> Add Student</Button>}
+        title={t('students.title')}
+        subtitle={t('students.subtitle')}
+        actions={isStaff && <Button onClick={openCreate}><UserPlus size={16} /> {t('students.addStudent')}</Button>}
       />
       <Card>
         <form
           className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-4"
           onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}
         >
-          <Input className="max-w-xs" placeholder="Search by name or phone..."
+          <Input className="max-w-xs" placeholder={t('students.searchPlaceholder')}
                  value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           <Select className="w-44" value={groupFilter}
                   onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>
-            <option value="">All Groups</option>
+            <option value="">{t('students.allGroups')}</option>
             {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </Select>
           <Select className="w-36" value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="">{t('students.allStatuses')}</option>
+            <option value="active">{t('common.badge.active')}</option>
+            <option value="inactive">{t('common.badge.inactive')}</option>
           </Select>
-          <Button type="submit" variant="secondary"><Search size={15} /> Search</Button>
+          <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
         {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No students found" hint="Try adjusting the search or filters." />
+          <EmptyState title={t('students.noStudentsFound')} hint={t('students.noStudentsHint')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
                 <tr>
-                  <Th>#</Th><Th>Name</Th><Th>Phone</Th><Th>Parent</Th><Th>Groups</Th><Th>Status</Th>
-                  {isStaff && <Th className="text-right">Actions</Th>}
+                  <Th>#</Th><Th>{t('students.columnName')}</Th><Th>{t('students.columnPhone')}</Th>
+                  <Th>{t('students.columnParent')}</Th><Th>{t('students.columnGroups')}</Th><Th>{t('common.status')}</Th>
+                  {isStaff && <Th className="text-right">{t('common.actions')}</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -231,10 +244,10 @@ export default function Students() {
                     {isStaff && (
                       <Td className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title="Edit">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title={t('common.edit')}>
                             <Pencil size={15} className="text-blue-600" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(s)} title="Deactivate">
+                          <Button variant="ghost" size="sm" onClick={() => setDeleting(s)} title={t('common.deactivate')}>
                             <Trash2 size={15} className="text-red-500" />
                           </Button>
                         </div>
@@ -250,49 +263,49 @@ export default function Students() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? 'Edit Student' : 'Add Student'} wide>
+             title={editing ? t('students.editStudent') : t('students.addStudentTitle')} wide>
         <form onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" required error={formState.errors.first_name?.message}>
+            <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
               <Input {...register('first_name')} />
             </Field>
-            <Field label="Last name" required error={formState.errors.last_name?.message}>
+            <Field label={t('students.lastName')} required error={formState.errors.last_name?.message}>
               <Input {...register('last_name')} />
             </Field>
-            <Field label="Phone"><Input {...register('phone')} /></Field>
-            <Field label="Email" error={formState.errors.email?.message}><Input {...register('email')} /></Field>
-            <Field label="Date of birth"><Input type="date" {...register('date_of_birth')} /></Field>
-            <Field label="Gender">
+            <Field label={t('students.phone')}><Input {...register('phone')} /></Field>
+            <Field label={t('students.email')} error={formState.errors.email?.message}><Input {...register('email')} /></Field>
+            <Field label={t('students.dateOfBirth')}><Input type="date" {...register('date_of_birth')} /></Field>
+            <Field label={t('students.gender')}>
               <Select {...register('gender')}>
-                <option value="">Not specified</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="">{t('common.notSpecified')}</option>
+                <option value="male">{t('common.male')}</option>
+                <option value="female">{t('common.female')}</option>
               </Select>
             </Field>
-            <Field label="Status">
+            <Field label={t('common.status')}>
               <Select {...register('status')}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active">{t('common.badge.active')}</option>
+                <option value="inactive">{t('common.badge.inactive')}</option>
               </Select>
             </Field>
-            <Field label="Enrollment date"><Input type="date" {...register('enrollment_date')} /></Field>
+            <Field label={t('students.enrollmentDate')}><Input type="date" {...register('enrollment_date')} /></Field>
           </div>
-          <Field label="Parents">
+          <Field label={t('students.parents')}>
             <CheckboxList
               options={(parents?.items ?? []).map((p) => ({ id: p.id, label: `${p.first_name} ${p.last_name}` }))}
-              selected={parentIds} onChange={setParentIds} empty="No parents yet — add them on the Parents page."
+              selected={parentIds} onChange={setParentIds} empty={t('students.noParentsHint')}
             />
           </Field>
-          <Field label="Groups">
+          <Field label={t('students.groups')}>
             <CheckboxList
               options={(groups?.items ?? []).map((g) => ({ id: g.id, label: g.name }))}
-              selected={groupIds} onChange={setGroupIds} empty="No groups yet — add them on the Groups page."
+              selected={groupIds} onChange={setGroupIds} empty={t('students.noGroupsHint')}
             />
           </Field>
-          <Field label="Notes"><Textarea {...register('notes')} /></Field>
+          <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={saveMutation.isPending}>{editing ? 'Save changes' : 'Create student'}</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('students.createStudent')}</Button>
           </div>
         </form>
       </Modal>
@@ -302,8 +315,8 @@ export default function Students() {
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && deleteMutation.mutate(deleting)}
         loading={deleteMutation.isPending}
-        title="Deactivate student?"
-        message={`${deleting?.first_name} ${deleting?.last_name} will be marked inactive. Attendance and payment history stays intact.`}
+        title={t('confirm.deactivateStudentTitle')}
+        message={t('confirm.deactivateStudentMessage', { name: `${deleting?.first_name} ${deleting?.last_name}` })}
       />
     </>
   )

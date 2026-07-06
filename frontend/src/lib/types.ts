@@ -189,11 +189,7 @@ export interface Notification {
   created_at: string
 }
 
-export const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December']
-
-export function personName(t: Tag | null | undefined): string {
-  if (!t) return '—'
-  return t.name ?? `${t.first_name ?? ''} ${t.last_name ?? ''}`.trim()
+export function personName(tag: Tag | null | undefined): string {
+  if (!tag) return '—'
+  return tag.name ?? `${tag.first_name ?? ''} ${tag.last_name ?? ''}`.trim()
 }

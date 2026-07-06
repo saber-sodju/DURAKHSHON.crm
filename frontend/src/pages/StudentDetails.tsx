@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Student, Page, AttendanceRecord, Payment, Grade } from '../lib/types'
@@ -11,6 +12,7 @@ import { Card, Badge, TableShell, Th, Td, EmptyState, TableSkeleton, Button } fr
 export default function StudentDetails() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { t } = useTranslation()
   const canSeePayments = user?.role !== 'teacher'
 
   const { data: student, isLoading } = useQuery({
@@ -39,27 +41,30 @@ export default function StudentDetails() {
 
   if (isLoading || !student) return <Card><TableSkeleton /></Card>
 
+  const genderLabel = student.gender === 'male' ? t('common.male')
+    : student.gender === 'female' ? t('common.female') : '—'
+
   return (
     <>
       <Link to="/students" className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline">
-        <ArrowLeft size={15} /> Back to students
+        <ArrowLeft size={15} /> {t('studentDetails.back')}
       </Link>
       <PageHeader
         title={`${student.first_name} ${student.last_name}`}
-        subtitle={`Student profile · enrolled ${formatDate(student.enrollment_date)}`}
+        subtitle={t('studentDetails.subtitle', { date: formatDate(student.enrollment_date) })}
         actions={<Badge value={student.status} className="text-sm" />}
       />
 
       <div className="grid gap-6 xl:grid-cols-3">
         <Card className="p-5">
-          <h2 className="mb-3 font-bold text-slate-800">Details</h2>
+          <h2 className="mb-3 font-bold text-slate-800">{t('studentDetails.details')}</h2>
           <dl className="space-y-2.5 text-sm">
             {[
-              ['Phone', student.phone || '—'],
-              ['Email', student.email || '—'],
-              ['Date of birth', formatDate(student.date_of_birth)],
-              ['Gender', student.gender ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1) : '—'],
-              ['Notes', student.notes || '—'],
+              [t('students.phone'), student.phone || '—'],
+              [t('students.email'), student.email || '—'],
+              [t('students.dateOfBirth'), formatDate(student.date_of_birth)],
+              [t('students.gender'), genderLabel],
+              [t('common.notes'), student.notes || '—'],
             ].map(([label, value]) => (
               <div key={label as string} className="flex justify-between gap-4">
                 <dt className="shrink-0 font-semibold text-slate-500">{label}</dt>
@@ -67,8 +72,8 @@ export default function StudentDetails() {
               </div>
             ))}
           </dl>
-          <h3 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">Parents</h3>
-          {student.parents.length === 0 ? <p className="text-sm text-slate-400">No parents linked</p> : (
+          <h3 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">{t('students.parents')}</h3>
+          {student.parents.length === 0 ? <p className="text-sm text-slate-400">{t('studentDetails.notLinked')}</p> : (
             <div className="flex flex-wrap gap-1.5">
               {student.parents.map((p) => (
                 <span key={p.id} className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
@@ -77,8 +82,8 @@ export default function StudentDetails() {
               ))}
             </div>
           )}
-          <h3 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">Groups</h3>
-          {student.groups.length === 0 ? <p className="text-sm text-slate-400">Not in any group</p> : (
+          <h3 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">{t('students.groups')}</h3>
+          {student.groups.length === 0 ? <p className="text-sm text-slate-400">{t('studentDetails.notInGroup')}</p> : (
             <div className="flex flex-wrap gap-1.5">
               {student.groups.map((g) => (
                 <Link key={g.id} to={`/groups/${g.id}`}
@@ -93,12 +98,12 @@ export default function StudentDetails() {
         <div className="space-y-6 xl:col-span-2">
           <Card>
             <div className="flex items-center justify-between px-5 pt-4">
-              <h2 className="font-bold text-slate-800">Recent Attendance</h2>
-              <Link to={`/attendance?student_id=${student.id}`}><Button variant="secondary" size="sm">View all</Button></Link>
+              <h2 className="font-bold text-slate-800">{t('studentDetails.recentAttendance')}</h2>
+              <Link to={`/attendance?student_id=${student.id}`}><Button variant="secondary" size="sm">{t('studentDetails.viewAll')}</Button></Link>
             </div>
-            {!attendance || attendance.items.length === 0 ? <EmptyState title="No attendance records" /> : (
+            {!attendance || attendance.items.length === 0 ? <EmptyState title={t('studentDetails.noAttendance')} /> : (
               <TableShell>
-                <thead><tr><Th>Date</Th><Th>Group</Th><Th>Status</Th><Th>Note</Th></tr></thead>
+                <thead><tr><Th>{t('studentDetails.columnDate')}</Th><Th>{t('studentDetails.columnGroup')}</Th><Th>{t('studentDetails.columnStatus')}</Th><Th>{t('studentDetails.columnNote')}</Th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {attendance.items.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50">
@@ -114,10 +119,10 @@ export default function StudentDetails() {
           </Card>
 
           <Card>
-            <h2 className="px-5 pt-4 font-bold text-slate-800">Exam Results</h2>
-            {!grades || grades.items.length === 0 ? <EmptyState title="No grades yet" /> : (
+            <h2 className="px-5 pt-4 font-bold text-slate-800">{t('studentDetails.examResults')}</h2>
+            {!grades || grades.items.length === 0 ? <EmptyState title={t('studentDetails.noGrades')} /> : (
               <TableShell>
-                <thead><tr><Th>Exam</Th><Th>Group</Th><Th>Score</Th><Th>%</Th><Th>Grade</Th></tr></thead>
+                <thead><tr><Th>{t('studentDetails.columnExam')}</Th><Th>{t('studentDetails.columnGroup')}</Th><Th>{t('studentDetails.columnScore')}</Th><Th>%</Th><Th>{t('studentDetails.columnGrade')}</Th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {grades.items.map((g) => (
                     <tr key={g.id} className="hover:bg-slate-50">
@@ -135,10 +140,10 @@ export default function StudentDetails() {
 
           {canSeePayments && (
             <Card>
-              <h2 className="px-5 pt-4 font-bold text-slate-800">Payments</h2>
-              {!payments || payments.items.length === 0 ? <EmptyState title="No payments" /> : (
+              <h2 className="px-5 pt-4 font-bold text-slate-800">{t('studentDetails.payments')}</h2>
+              {!payments || payments.items.length === 0 ? <EmptyState title={t('studentDetails.noPayments')} /> : (
                 <TableShell>
-                  <thead><tr><Th>Period</Th><Th>Group</Th><Th>Amount</Th><Th>Paid</Th><Th>Status</Th></tr></thead>
+                  <thead><tr><Th>{t('studentDetails.columnPeriod')}</Th><Th>{t('studentDetails.columnGroup')}</Th><Th>{t('studentDetails.columnAmount')}</Th><Th>{t('studentDetails.columnPaid')}</Th><Th>{t('studentDetails.columnStatus')}</Th></tr></thead>
                   <tbody className="divide-y divide-slate-100">
                     {payments.items.map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50">

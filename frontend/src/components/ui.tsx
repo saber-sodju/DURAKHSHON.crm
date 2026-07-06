@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type SelectHTMLAttributes,
   type TextareaHTMLAttributes, type ReactNode, forwardRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Inbox, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../lib/utils'
 
@@ -112,12 +113,9 @@ const badgeStyles: Record<string, string> = {
   parent: 'bg-amber-50 text-amber-700 ring-amber-600/20',
 }
 
-const badgeLabels: Record<string, string> = {
-  partial: 'Partially Paid',
-}
-
 export function Badge({ value, className }: { value: string; className?: string }) {
-  const label = badgeLabels[value] ?? value.charAt(0).toUpperCase() + value.slice(1)
+  const { t } = useTranslation()
+  const label = t(`common.badge.${value}`, { defaultValue: value.charAt(0).toUpperCase() + value.slice(1) })
   return (
     <span className={cn(
       'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset',
@@ -180,6 +178,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, loadin
   message: string
   loading?: boolean
 }) {
+  const { t } = useTranslation()
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
@@ -193,8 +192,8 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, loadin
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="danger" onClick={onConfirm} loading={loading}>Delete</Button>
+          <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="danger" onClick={onConfirm} loading={loading}>{t('common.delete')}</Button>
         </div>
       </div>
     </div>
@@ -253,19 +252,20 @@ export function Pagination({ page, pageSize, total, onPage }: {
   total: number
   onPage: (page: number) => void
 }) {
+  const { t } = useTranslation()
   const pages = Math.max(1, Math.ceil(total / pageSize))
   if (pages <= 1) return null
   return (
     <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
       <span className="text-xs text-slate-500">
-        Page {page} of {pages} · {total} records
+        {t('ui.pagination', { page, pages, total })}
       </span>
       <div className="flex gap-1">
         <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
-          <ChevronLeft size={14} /> Prev
+          <ChevronLeft size={14} /> {t('ui.prev')}
         </Button>
         <Button variant="secondary" size="sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>
-          Next <ChevronRight size={14} />
+          {t('ui.next')} <ChevronRight size={14} />
         </Button>
       </div>
     </div>

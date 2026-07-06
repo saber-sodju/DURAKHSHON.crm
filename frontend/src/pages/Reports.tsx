@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Download } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Page, Group } from '../lib/types'
@@ -9,11 +10,11 @@ import { Button, Select, Input, Card, Badge, TableShell, Th, Td, EmptyState, Tab
 
 type Tab = 'attendance' | 'payments' | 'progress' | 'workload'
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'attendance', label: 'Attendance' },
-  { key: 'payments', label: 'Payments' },
-  { key: 'progress', label: 'Student Progress' },
-  { key: 'workload', label: 'Teacher Workload' },
+const TAB_KEYS: { key: Tab; labelKey: string }[] = [
+  { key: 'attendance', labelKey: 'reports.tabAttendance' },
+  { key: 'payments', labelKey: 'reports.tabPayments' },
+  { key: 'progress', labelKey: 'reports.tabProgress' },
+  { key: 'workload', labelKey: 'reports.tabWorkload' },
 ]
 
 async function downloadCsv(path: string, params: Record<string, string | undefined>, filename: string) {
@@ -27,6 +28,7 @@ async function downloadCsv(path: string, params: Record<string, string | undefin
 }
 
 export default function Reports() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('attendance')
   const [groupId, setGroupId] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -77,20 +79,20 @@ export default function Reports() {
 
   return (
     <>
-      <PageHeader title="Reports" subtitle="Analytics and exports"
+      <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')}
                   actions={canExport && (
-                    <Button variant="secondary" onClick={exportCsv}><Download size={15} /> Export CSV</Button>
+                    <Button variant="secondary" onClick={exportCsv}><Download size={15} /> {t('common.exportCsv')}</Button>
                   )} />
       <Card>
         <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 px-4 pt-3">
-          {TABS.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
+          {TAB_KEYS.map((tabItem) => (
+            <button key={tabItem.key} onClick={() => setTab(tabItem.key)}
                     className={`rounded-t-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                      tab === t.key
+                      tab === tabItem.key
                         ? 'border-b-2 border-blue-600 text-blue-600'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}>
-              {t.label}
+              {t(tabItem.labelKey)}
             </button>
           ))}
         </div>
@@ -98,7 +100,7 @@ export default function Reports() {
         {tab !== 'workload' && (
           <div className="flex flex-wrap gap-2 border-b border-slate-200 p-4">
             <Select className="w-44" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-              <option value="">All Groups</option>
+              <option value="">{t('reports.allGroups')}</option>
               {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
             {tab === 'attendance' && (
@@ -113,10 +115,13 @@ export default function Reports() {
 
         {tab === 'attendance' && (
           loadingAttendance ? <TableSkeleton cols={7} /> :
-          !attendance?.items?.length ? <EmptyState title="No data for these filters" /> : (
+          !attendance?.items?.length ? <EmptyState title={t('reports.noDataFilters')} /> : (
             <TableShell>
               <thead className="bg-slate-50">
-                <tr><Th>Student</Th><Th>Present</Th><Th>Absent</Th><Th>Late</Th><Th>Excused</Th><Th>Total</Th><Th>Attendance %</Th></tr>
+                <tr>
+                  <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnPresent')}</Th><Th>{t('reports.columnAbsent')}</Th>
+                  <Th>{t('reports.columnLate')}</Th><Th>{t('reports.columnExcused')}</Th><Th>{t('reports.columnTotal')}</Th><Th>{t('reports.columnAttendancePct')}</Th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {attendance.items.map((r: Record<string, number | string>) => (
@@ -140,10 +145,10 @@ export default function Reports() {
             <>
               <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-4">
                 {[
-                  ['Total expected', formatMoney(payments.summary.total_amount)],
-                  ['Collected', formatMoney(payments.summary.total_paid)],
-                  ['Outstanding', formatMoney(payments.summary.total_outstanding)],
-                  ['Overdue count', payments.summary.overdue],
+                  [t('reports.totalExpected'), formatMoney(payments.summary.total_amount)],
+                  [t('reports.collected'), formatMoney(payments.summary.total_paid)],
+                  [t('reports.outstanding'), formatMoney(payments.summary.total_outstanding)],
+                  [t('reports.overdueCount'), payments.summary.overdue],
                 ].map(([label, value]) => (
                   <div key={label as string} className="rounded-lg bg-slate-50 p-3">
                     <div className="text-xs font-semibold uppercase text-slate-500">{label}</div>
@@ -151,10 +156,13 @@ export default function Reports() {
                   </div>
                 ))}
               </div>
-              {!payments.items.length ? <EmptyState title="No payments" /> : (
+              {!payments.items.length ? <EmptyState title={t('reports.noPayments')} /> : (
                 <TableShell>
                   <thead className="bg-slate-50">
-                    <tr><Th>Student</Th><Th>Group</Th><Th>Period</Th><Th>Amount</Th><Th>Paid</Th><Th>Status</Th></tr>
+                    <tr>
+                      <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnGroup')}</Th><Th>{t('reports.columnPeriod')}</Th>
+                      <Th>{t('reports.columnAmount')}</Th><Th>{t('reports.columnPaid')}</Th><Th>{t('reports.columnStatus')}</Th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {payments.items.map((p: Record<string, string | number>) => (
@@ -176,10 +184,13 @@ export default function Reports() {
 
         {tab === 'progress' && (
           loadingProgress ? <TableSkeleton cols={5} /> :
-          !progress?.items?.length ? <EmptyState title="No grades recorded yet" /> : (
+          !progress?.items?.length ? <EmptyState title={t('reports.noGradesRecorded')} /> : (
             <TableShell>
               <thead className="bg-slate-50">
-                <tr><Th>Student</Th><Th>Exams taken</Th><Th>Average %</Th><Th>Best %</Th><Th>Worst %</Th></tr>
+                <tr>
+                  <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnExamsTaken')}</Th>
+                  <Th>{t('reports.columnAveragePct')}</Th><Th>{t('reports.columnBestPct')}</Th><Th>{t('reports.columnWorstPct')}</Th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {progress.items.map((r: Record<string, number | string>) => (
@@ -198,10 +209,13 @@ export default function Reports() {
 
         {tab === 'workload' && (
           loadingWorkload ? <TableSkeleton cols={5} /> :
-          !workload?.items?.length ? <EmptyState title="No active teachers" /> : (
+          !workload?.items?.length ? <EmptyState title={t('reports.noActiveTeachers')} /> : (
             <TableShell>
               <thead className="bg-slate-50">
-                <tr><Th>Teacher</Th><Th>Subject</Th><Th>Groups</Th><Th>Students</Th><Th>Weekly lessons</Th></tr>
+                <tr>
+                  <Th>{t('reports.columnTeacher')}</Th><Th>{t('reports.columnSubject')}</Th><Th>{t('reports.columnGroups')}</Th>
+                  <Th>{t('reports.columnStudents')}</Th><Th>{t('reports.columnWeeklyLessons')}</Th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {workload.items.map((r: Record<string, number | string>) => (

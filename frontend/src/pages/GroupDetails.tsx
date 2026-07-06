@@ -1,8 +1,10 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ClipboardCheck } from 'lucide-react'
 import { api } from '../lib/api'
-import { DAY_NAMES, personName, type Group, type Page, type AttendanceRecord, type Exam } from '../lib/types'
+import { personName, type Group, type Page, type AttendanceRecord, type Exam } from '../lib/types'
+import { useDayNames } from '../lib/i18nLists'
 import { useAuth } from '../context/AuthContext'
 import { formatDate, formatMoney, formatTime } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
@@ -11,6 +13,8 @@ import { Card, Badge, TableShell, Th, Td, EmptyState, TableSkeleton, Button } fr
 export default function GroupDetails() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { t } = useTranslation()
+  const dayNames = useDayNames()
   const canMark = user?.role === 'director' || user?.role === 'admin' || user?.role === 'teacher'
 
   const { data: group, isLoading } = useQuery({
@@ -37,17 +41,17 @@ export default function GroupDetails() {
   return (
     <>
       <Link to="/groups" className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline">
-        <ArrowLeft size={15} /> Back to groups
+        <ArrowLeft size={15} /> {t('groupDetails.back')}
       </Link>
       <PageHeader
         title={group.name}
-        subtitle={`${group.course_name} · ${formatMoney(group.price_per_month)}/month`}
+        subtitle={t('groupDetails.subtitleFmt', { course: group.course_name, price: formatMoney(group.price_per_month) })}
         actions={
           <div className="flex items-center gap-2">
             <Badge value={group.status} />
             {canMark && (
               <Link to={`/attendance?mark=1&group_id=${group.id}`}>
-                <Button size="sm"><ClipboardCheck size={15} /> Mark Attendance</Button>
+                <Button size="sm"><ClipboardCheck size={15} /> {t('groupDetails.markAttendance')}</Button>
               </Link>
             )}
           </div>
@@ -57,14 +61,14 @@ export default function GroupDetails() {
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6">
           <Card className="p-5">
-            <h2 className="mb-3 font-bold text-slate-800">Details</h2>
+            <h2 className="mb-3 font-bold text-slate-800">{t('groupDetails.details')}</h2>
             <dl className="space-y-2.5 text-sm">
               {[
-                ['Teacher', personName(group.teacher)],
-                ['Room', group.room || '—'],
-                ['Start date', formatDate(group.start_date)],
-                ['End date', formatDate(group.end_date)],
-                ['Students', String(group.students.length)],
+                [t('groupDetails.columnTeacher'), personName(group.teacher)],
+                [t('groupDetails.columnRoom'), group.room || '—'],
+                [t('groupDetails.columnStartDate'), formatDate(group.start_date)],
+                [t('groupDetails.columnEndDate'), formatDate(group.end_date)],
+                [t('groupDetails.columnStudents'), String(group.students.length)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4">
                   <dt className="font-semibold text-slate-500">{label}</dt>
@@ -74,12 +78,12 @@ export default function GroupDetails() {
             </dl>
           </Card>
           <Card className="p-5">
-            <h2 className="mb-3 font-bold text-slate-800">Weekly Schedule</h2>
-            {group.schedules.length === 0 ? <p className="text-sm text-slate-400">No schedule set</p> : (
+            <h2 className="mb-3 font-bold text-slate-800">{t('groupDetails.weeklySchedule')}</h2>
+            {group.schedules.length === 0 ? <p className="text-sm text-slate-400">{t('groupDetails.noSchedule')}</p> : (
               <ul className="space-y-2">
                 {group.schedules.map((s) => (
                   <li key={s.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                    <span className="font-semibold text-slate-700">{DAY_NAMES[s.day_of_week]}</span>
+                    <span className="font-semibold text-slate-700">{dayNames[s.day_of_week]}</span>
                     <span className="text-slate-500">
                       {formatTime(s.start_time)}–{formatTime(s.end_time)}{s.room ? ` · ${s.room}` : ''}
                     </span>
@@ -92,10 +96,10 @@ export default function GroupDetails() {
 
         <div className="space-y-6 xl:col-span-2">
           <Card>
-            <h2 className="px-5 pt-4 font-bold text-slate-800">Students ({group.students.length})</h2>
-            {group.students.length === 0 ? <EmptyState title="No students in this group" /> : (
+            <h2 className="px-5 pt-4 font-bold text-slate-800">{t('groupDetails.studentsCount', { count: group.students.length })}</h2>
+            {group.students.length === 0 ? <EmptyState title={t('groupDetails.noStudents')} /> : (
               <TableShell>
-                <thead><tr><Th>#</Th><Th>Name</Th></tr></thead>
+                <thead><tr><Th>#</Th><Th>{t('students.columnName')}</Th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {group.students.map((s, i) => (
                     <tr key={s.id} className="hover:bg-slate-50">
@@ -115,10 +119,10 @@ export default function GroupDetails() {
           {canMark && (
             <>
               <Card>
-                <h2 className="px-5 pt-4 font-bold text-slate-800">Recent Attendance</h2>
-                {!attendance || attendance.items.length === 0 ? <EmptyState title="No attendance yet" /> : (
+                <h2 className="px-5 pt-4 font-bold text-slate-800">{t('groupDetails.recentAttendance')}</h2>
+                {!attendance || attendance.items.length === 0 ? <EmptyState title={t('groupDetails.noAttendance')} /> : (
                   <TableShell>
-                    <thead><tr><Th>Date</Th><Th>Student</Th><Th>Status</Th></tr></thead>
+                    <thead><tr><Th>{t('groupDetails.columnDate')}</Th><Th>{t('groupDetails.columnStudent')}</Th><Th>{t('groupDetails.columnStatus')}</Th></tr></thead>
                     <tbody className="divide-y divide-slate-100">
                       {attendance.items.map((r) => (
                         <tr key={r.id} className="hover:bg-slate-50">
@@ -132,10 +136,10 @@ export default function GroupDetails() {
                 )}
               </Card>
               <Card>
-                <h2 className="px-5 pt-4 font-bold text-slate-800">Exams</h2>
-                {!exams || exams.items.length === 0 ? <EmptyState title="No exams yet" /> : (
+                <h2 className="px-5 pt-4 font-bold text-slate-800">{t('groupDetails.exams')}</h2>
+                {!exams || exams.items.length === 0 ? <EmptyState title={t('groupDetails.noExams')} /> : (
                   <TableShell>
-                    <thead><tr><Th>Title</Th><Th>Date</Th><Th>Max score</Th><Th>Status</Th><Th>Grades</Th></tr></thead>
+                    <thead><tr><Th>{t('groupDetails.columnTitle')}</Th><Th>{t('groupDetails.columnDate')}</Th><Th>{t('groupDetails.columnMaxScore')}</Th><Th>{t('groupDetails.columnStatus')}</Th><Th>{t('groupDetails.columnGrades')}</Th></tr></thead>
                     <tbody className="divide-y divide-slate-100">
                       {exams.items.map((e) => (
                         <tr key={e.id} className="hover:bg-slate-50">

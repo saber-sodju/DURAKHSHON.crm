@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Plus, GraduationCap } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import type { Page, Exam, Group, Grade } from '../lib/types'
@@ -27,6 +28,7 @@ const emptyDraft: ExamDraft = {
 
 function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [scores, setScores] = useState<Record<number, { score: string; comment: string }>>({})
 
@@ -71,16 +73,16 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grades'] })
       queryClient.invalidateQueries({ queryKey: ['exams'] })
-      toast('Grades saved')
+      toast(t('toasts.gradesSaved'))
       onClose()
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
   })
 
   return (
-    <Modal open onClose={onClose} title={`Grades — ${exam.title} (max ${exam.max_score})`} wide>
+    <Modal open onClose={onClose} title={t('exams.gradesModalTitle', { title: exam.title, max: exam.max_score })} wide>
       {!group ? <TableSkeleton /> : rows.length === 0 ? (
-        <EmptyState title="No students in this group" />
+        <EmptyState title={t('exams.noStudentsInGroup')} />
       ) : (
         <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200">
           {rows.map(({ student, grade }) => (
@@ -89,13 +91,13 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
                 {student.first_name} {student.last_name}
               </span>
               <Input type="number" min="0" max={exam.max_score} step="0.5" className="w-24"
-                     placeholder="Score"
+                     placeholder={t('exams.scorePlaceholder')}
                      value={currentScore(student.id, grade?.score)}
                      onChange={(e) => setScores({ ...scores, [student.id]: { ...(scores[student.id] ?? { comment: grade?.comment ?? '' }), score: e.target.value } })} />
               {grade && (
                 <span className="text-xs font-bold text-slate-500">{grade.percentage}% · {grade.grade_label}</span>
               )}
-              <Input className="min-w-32 flex-1" placeholder="Comment (optional)"
+              <Input className="min-w-32 flex-1" placeholder={t('exams.commentPlaceholder')}
                      value={scores[student.id]?.comment ?? grade?.comment ?? ''}
                      onChange={(e) => setScores({ ...scores, [student.id]: { ...(scores[student.id] ?? { score: grade?.score ?? '' }), comment: e.target.value } })} />
             </div>
@@ -103,12 +105,11 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
         </div>
       )}
       <p className="mt-3 text-xs text-slate-400">
-        Percentage and letter grade are calculated automatically. Grades become visible to students and
-        parents once the exam is published.
+        {t('exams.gradesHint')}
       </p>
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>Save grades</Button>
+        <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+        <Button loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>{t('exams.saveGrades')}</Button>
       </div>
     </Modal>
   )
@@ -116,6 +117,7 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
 
 export default function Exams() {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
@@ -148,7 +150,7 @@ export default function Exams() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exams'] })
-      toast(editing ? 'Exam updated' : 'Exam created')
+      toast(editing ? t('toasts.examUpdated') : t('toasts.examCreated'))
       setModalOpen(false)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -158,7 +160,7 @@ export default function Exams() {
     mutationFn: async (exam: Exam) => (await api.delete(`/exams/${exam.id}`)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exams'] })
-      toast('Exam deleted')
+      toast(t('toasts.examDeleted'))
       setDeleting(null)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -170,11 +172,11 @@ export default function Exams() {
     setModalOpen(true)
   }
 
-  function openEdit(e: Exam) {
-    setEditing(e)
+  function openEdit(exam: Exam) {
+    setEditing(exam)
     setDraft({
-      title: e.title, group_id: String(e.group_id), exam_date: e.exam_date,
-      max_score: e.max_score, description: e.description, status: e.status,
+      title: exam.title, group_id: String(exam.group_id), exam_date: exam.exam_date,
+      max_score: exam.max_score, description: exam.description, status: exam.status,
     })
     setModalOpen(true)
   }
@@ -183,48 +185,48 @@ export default function Exams() {
 
   return (
     <>
-      <PageHeader title="Exams" subtitle="Create exams and enter grades"
-                  actions={<Button onClick={openCreate}><Plus size={16} /> Add Exam</Button>} />
+      <PageHeader title={t('exams.title')} subtitle={t('exams.subtitle')}
+                  actions={<Button onClick={openCreate}><Plus size={16} /> {t('exams.addExam')}</Button>} />
       <Card>
         <div className="flex flex-wrap gap-2 border-b border-slate-200 p-4">
           <Select className="w-40" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-            <option value="">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="completed">Completed</option>
+            <option value="">{t('exams.allStatuses')}</option>
+            <option value="draft">{t('exams.statusDraft')}</option>
+            <option value="published">{t('exams.statusPublished')}</option>
+            <option value="completed">{t('exams.statusCompleted')}</option>
           </Select>
         </div>
 
         {isLoading ? <TableSkeleton cols={7} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No exams yet" hint="Create your first exam to start grading." />
+          <EmptyState title={t('exams.noExamsYet')} hint={t('exams.noExamsHint')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
                 <tr>
-                  <Th>Title</Th><Th>Group</Th><Th>Teacher</Th><Th>Date</Th>
-                  <Th>Max score</Th><Th>Status</Th><Th>Grades</Th><Th className="text-right">Actions</Th>
+                  <Th>{t('exams.columnTitle')}</Th><Th>{t('exams.columnGroup')}</Th><Th>{t('exams.columnTeacher')}</Th><Th>{t('exams.columnDate')}</Th>
+                  <Th>{t('exams.columnMaxScore')}</Th><Th>{t('exams.columnStatus')}</Th><Th>{t('exams.columnGrades')}</Th><Th className="text-right">{t('common.actions')}</Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.items.map((e) => (
-                  <tr key={e.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold text-slate-800">{e.title}</Td>
-                    <Td>{e.group_name}</Td>
-                    <Td>{e.teacher_name ?? '—'}</Td>
-                    <Td>{formatDate(e.exam_date)}</Td>
-                    <Td>{e.max_score}</Td>
-                    <Td><Badge value={e.status} /></Td>
-                    <Td>{e.grades_count}</Td>
+                {data.items.map((exam) => (
+                  <tr key={exam.id} className="hover:bg-slate-50">
+                    <Td className="font-semibold text-slate-800">{exam.title}</Td>
+                    <Td>{exam.group_name}</Td>
+                    <Td>{exam.teacher_name ?? '—'}</Td>
+                    <Td>{formatDate(exam.exam_date)}</Td>
+                    <Td>{exam.max_score}</Td>
+                    <Td><Badge value={exam.status} /></Td>
+                    <Td>{exam.grades_count}</Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setGrading(e)} title="Enter grades">
+                        <Button variant="ghost" size="sm" onClick={() => setGrading(exam)} title={t('exams.enterGrades')}>
                           <GraduationCap size={16} className="text-emerald-600" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(e)} title="Edit">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} title={t('common.edit')}>
                           <Pencil size={15} className="text-blue-600" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(e)} title="Delete">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleting(exam)} title={t('common.delete')}>
                           <Trash2 size={15} className="text-red-500" />
                         </Button>
                       </div>
@@ -239,40 +241,40 @@ export default function Exams() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? 'Edit Exam' : 'Add Exam'}>
+             title={editing ? t('exams.editExam') : t('exams.addExamTitle')}>
         <div className="space-y-4">
-          <Field label="Title" required>
+          <Field label={t('exams.examTitle')} required>
             <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Group" required>
+            <Field label={t('exams.group')} required>
               <Select value={draft.group_id} onChange={(e) => setDraft({ ...draft, group_id: e.target.value })}>
-                <option value="">— Select group —</option>
+                <option value="">{t('exams.selectGroup')}</option>
                 {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </Select>
             </Field>
-            <Field label="Exam date" required>
+            <Field label={t('exams.examDate')} required>
               <Input type="date" value={draft.exam_date} onChange={(e) => setDraft({ ...draft, exam_date: e.target.value })} />
             </Field>
-            <Field label="Max score" required>
+            <Field label={t('exams.maxScore')} required>
               <Input type="number" min="1" value={draft.max_score}
                      onChange={(e) => setDraft({ ...draft, max_score: e.target.value })} />
             </Field>
-            <Field label="Status">
+            <Field label={t('exams.status')}>
               <Select value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
-                <option value="draft">Draft (hidden from students)</option>
-                <option value="published">Published</option>
-                <option value="completed">Completed</option>
+                <option value="draft">{t('exams.statusDraftHint')}</option>
+                <option value="published">{t('exams.statusPublished')}</option>
+                <option value="completed">{t('exams.statusCompleted')}</option>
               </Select>
             </Field>
           </div>
-          <Field label="Description">
+          <Field label={t('exams.description')}>
             <Textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
           </Field>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
             <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-              {editing ? 'Save changes' : 'Create exam'}
+              {editing ? t('common.saveChanges') : t('exams.createExam')}
             </Button>
           </div>
         </div>
@@ -285,8 +287,8 @@ export default function Exams() {
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && deleteMutation.mutate(deleting)}
         loading={deleteMutation.isPending}
-        title="Delete exam?"
-        message={`"${deleting?.title}" and all its grades will be permanently removed.`}
+        title={t('confirm.deleteExamTitle')}
+        message={t('confirm.deleteExamMessage', { title: deleting?.title })}
       />
     </>
   )

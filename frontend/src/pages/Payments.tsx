@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Search, Plus } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
-import { MONTH_NAMES, type Page, type Payment, type Group, type Student } from '../lib/types'
+import type { Page, Payment, Group, Student } from '../lib/types'
+import { useMonthNames } from '../lib/i18nLists'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { formatDate, formatMoney } from '../lib/utils'
@@ -35,6 +37,8 @@ const emptyDraft: PaymentDraft = {
 export default function Payments() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { t } = useTranslation()
+  const monthNames = useMonthNames()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const isStaff = user?.role === 'director' || user?.role === 'admin'
@@ -106,7 +110,7 @@ export default function Payments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      toast(editing ? 'Payment updated' : 'Payment created')
+      toast(editing ? t('toasts.paymentUpdated') : t('toasts.paymentCreated'))
       setModalOpen(false)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -116,7 +120,7 @@ export default function Payments() {
     mutationFn: async (payment: Payment) => (await api.delete(`/payments/${payment.id}`)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] })
-      toast('Payment deleted')
+      toast(t('toasts.paymentDeleted'))
       setDeleting(null)
     },
     onError: (e) => toast(apiErrorMessage(e), 'error'),
@@ -128,14 +132,14 @@ export default function Payments() {
     setModalOpen(true)
   }
 
-  function openEdit(p: Payment) {
-    setEditing(p)
+  function openEdit(payment: Payment) {
+    setEditing(payment)
     setDraft({
-      student_id: String(p.student_id), group_id: p.group_id ? String(p.group_id) : '',
-      month: String(p.month), year: String(p.year),
-      amount: p.amount, paid_amount: p.paid_amount,
-      due_date: p.due_date ?? '', paid_date: p.paid_date ?? '',
-      method: p.method, note: p.note,
+      student_id: String(payment.student_id), group_id: payment.group_id ? String(payment.group_id) : '',
+      month: String(payment.month), year: String(payment.year),
+      amount: payment.amount, paid_amount: payment.paid_amount,
+      due_date: payment.due_date ?? '', paid_date: payment.paid_date ?? '',
+      method: payment.method, note: payment.note,
     })
     setModalOpen(true)
   }
@@ -144,35 +148,36 @@ export default function Payments() {
 
   return (
     <>
-      <PageHeader title="Payments" subtitle="Track all student payments"
-                  actions={isStaff && <Button onClick={openCreate}><Plus size={16} /> Add Payment</Button>} />
+      <PageHeader title={t('payments.title')} subtitle={t('payments.subtitle')}
+                  actions={isStaff && <Button onClick={openCreate}><Plus size={16} /> {t('payments.addPayment')}</Button>} />
       <Card>
         <form className="flex flex-wrap gap-2 border-b border-slate-200 p-4"
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
           {isStaff && (
-            <Input className="max-w-xs" placeholder="Search student..."
+            <Input className="max-w-xs" placeholder={t('payments.searchPlaceholder')}
                    value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           )}
           <Select className="w-44" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-            <option value="">All statuses</option>
-            <option value="paid">Paid</option>
-            <option value="unpaid">Unpaid</option>
-            <option value="partial">Partially Paid</option>
-            <option value="overdue">Overdue</option>
+            <option value="">{t('payments.allStatuses')}</option>
+            <option value="paid">{t('common.badge.paid')}</option>
+            <option value="unpaid">{t('common.badge.unpaid')}</option>
+            <option value="partial">{t('common.badge.partial')}</option>
+            <option value="overdue">{t('common.badge.overdue')}</option>
           </Select>
           {isStaff && <Button type="submit" variant="secondary"><Search size={15} /></Button>}
         </form>
 
         {isLoading ? <TableSkeleton cols={8} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No payments found" />
+          <EmptyState title={t('payments.noPaymentsFound')} />
         ) : (
           <>
             <TableShell>
               <thead className="bg-slate-50">
                 <tr>
-                  <Th>#</Th><Th>Student</Th><Th>Group</Th><Th>Month/Year</Th><Th>Amount</Th>
-                  <Th>Paid</Th><Th>Status</Th><Th>Paid on</Th>
-                  {isStaff && <Th className="text-right">Actions</Th>}
+                  <Th>#</Th><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnGroup')}</Th>
+                  <Th>{t('payments.columnMonthYear')}</Th><Th>{t('payments.columnAmount')}</Th>
+                  <Th>{t('payments.columnPaid')}</Th><Th>{t('common.status')}</Th><Th>{t('payments.columnPaidOn')}</Th>
+                  {isStaff && <Th className="text-right">{t('common.actions')}</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -181,7 +186,7 @@ export default function Payments() {
                     <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
                     <Td className="font-semibold text-slate-800">{p.student_name}</Td>
                     <Td>{p.group_name ?? '—'}</Td>
-                    <Td>{MONTH_NAMES[p.month - 1]} {p.year}</Td>
+                    <Td>{monthNames[p.month - 1]} {p.year}</Td>
                     <Td>{formatMoney(p.amount)}</Td>
                     <Td>{formatMoney(p.paid_amount)}</Td>
                     <Td><Badge value={p.status} /></Td>
@@ -189,10 +194,10 @@ export default function Payments() {
                     {isStaff && (
                       <Td className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Edit">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title={t('common.edit')}>
                             <Pencil size={15} className="text-blue-600" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} title="Delete">
+                          <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} title={t('common.delete')}>
                             <Trash2 size={15} className="text-red-500" />
                           </Button>
                         </div>
@@ -208,69 +213,68 @@ export default function Payments() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? 'Edit Payment' : 'Add Payment'} wide>
+             title={editing ? t('payments.editPayment') : t('payments.addPaymentTitle')} wide>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Student" required>
+          <Field label={t('payments.student')} required>
             <Select value={draft.student_id} onChange={(e) => updateDraft({ student_id: e.target.value })}>
-              <option value="">— Select student —</option>
+              <option value="">{t('payments.selectStudent')}</option>
               {students?.items.map((s) => (
                 <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
               ))}
             </Select>
           </Field>
-          <Field label="Group">
+          <Field label={t('payments.group')}>
             <Select value={draft.group_id} onChange={(e) => updateDraft({ group_id: e.target.value })}>
-              <option value="">— No group —</option>
+              <option value="">{t('payments.noGroup')}</option>
               {groups?.items.map((g) => (
-                <option key={g.id} value={g.id}>{g.name} ({formatMoney(g.price_per_month)}/mo)</option>
+                <option key={g.id} value={g.id}>{g.name} ({formatMoney(g.price_per_month)}{t('payments.perMonth')})</option>
               ))}
             </Select>
           </Field>
-          <Field label="Month" required>
+          <Field label={t('payments.month')} required>
             <Select value={draft.month} onChange={(e) => updateDraft({ month: e.target.value })}>
-              {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              {monthNames.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
             </Select>
           </Field>
-          <Field label="Year" required>
+          <Field label={t('payments.year')} required>
             <Input type="number" min={2000} max={2100} value={draft.year}
                    onChange={(e) => updateDraft({ year: e.target.value })} />
           </Field>
-          <Field label="Amount" required>
+          <Field label={t('payments.amount')} required>
             <Input type="number" step="0.01" min="0" value={draft.amount}
                    onChange={(e) => updateDraft({ amount: e.target.value })} />
           </Field>
-          <Field label="Paid amount">
+          <Field label={t('payments.paidAmount')}>
             <Input type="number" step="0.01" min="0" value={draft.paid_amount}
                    onChange={(e) => updateDraft({ paid_amount: e.target.value })} />
           </Field>
-          <Field label="Due date">
+          <Field label={t('payments.dueDate')}>
             <Input type="date" value={draft.due_date} onChange={(e) => updateDraft({ due_date: e.target.value })} />
           </Field>
-          <Field label="Paid date">
+          <Field label={t('payments.paidDate')}>
             <Input type="date" value={draft.paid_date} onChange={(e) => updateDraft({ paid_date: e.target.value })} />
           </Field>
-          <Field label="Method">
+          <Field label={t('payments.method')}>
             <Select value={draft.method} onChange={(e) => updateDraft({ method: e.target.value })}>
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="bank_transfer">Bank transfer</option>
-              <option value="other">Other</option>
+              <option value="cash">{t('common.methods.cash')}</option>
+              <option value="card">{t('common.methods.card')}</option>
+              <option value="bank_transfer">{t('common.methods.bank_transfer')}</option>
+              <option value="other">{t('common.methods.other')}</option>
             </Select>
           </Field>
         </div>
         <div className="mt-4">
-          <Field label="Note">
+          <Field label={t('common.notes')}>
             <Textarea value={draft.note} onChange={(e) => updateDraft({ note: e.target.value })} />
           </Field>
         </div>
         <p className="mt-2 text-xs text-slate-400">
-          Status is computed automatically: fully paid → Paid, partly paid → Partially Paid,
-          past due date → Overdue.
+          {t('payments.statusHint')}
         </p>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
           <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-            {editing ? 'Save changes' : 'Create payment'}
+            {editing ? t('common.saveChanges') : t('payments.createPayment')}
           </Button>
         </div>
       </Modal>
@@ -280,8 +284,11 @@ export default function Payments() {
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && deleteMutation.mutate(deleting)}
         loading={deleteMutation.isPending}
-        title="Delete payment?"
-        message={`Payment of ${deleting ? formatMoney(deleting.amount) : ''} for ${deleting?.student_name} will be permanently removed.`}
+        title={t('confirm.deletePaymentTitle')}
+        message={t('confirm.deletePaymentMessage', {
+          amount: deleting ? formatMoney(deleting.amount) : '',
+          student: deleting?.student_name,
+        })}
       />
     </>
   )

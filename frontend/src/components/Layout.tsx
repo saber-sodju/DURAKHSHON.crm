@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   GraduationCap, LayoutDashboard, Users, BookUser, HeartHandshake, Boxes,
   CalendarDays, ClipboardCheck, Wallet, FileSpreadsheet, BarChart3,
@@ -10,57 +11,59 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { cn } from '../lib/utils'
 import type { RoleName } from '../lib/types'
+import LanguageSwitcher from './LanguageSwitcher'
 
 interface NavItem {
   to: string
-  label: string
+  labelKey: string
   icon: ReactNode
   roles: RoleName[]
 }
 
-const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
+const NAV_SECTIONS: { titleKey: string; items: NavItem[] }[] = [
   {
-    title: 'Overview',
+    titleKey: 'nav.overview',
     items: [
-      { to: '/', label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
+      { to: '/', labelKey: 'nav.dashboard', icon: <LayoutDashboard size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
     ],
   },
   {
-    title: 'Manage',
+    titleKey: 'nav.manage',
     items: [
-      { to: '/students', label: 'Students', icon: <Users size={18} />, roles: ['director', 'admin', 'teacher'] },
-      { to: '/teachers', label: 'Teachers', icon: <BookUser size={18} />, roles: ['director', 'admin'] },
-      { to: '/parents', label: 'Parents', icon: <HeartHandshake size={18} />, roles: ['director', 'admin'] },
-      { to: '/groups', label: 'Groups', icon: <Boxes size={18} />, roles: ['director', 'admin', 'teacher'] },
-      { to: '/schedule', label: 'Schedule', icon: <CalendarDays size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
+      { to: '/students', labelKey: 'nav.students', icon: <Users size={18} />, roles: ['director', 'admin', 'teacher'] },
+      { to: '/teachers', labelKey: 'nav.teachers', icon: <BookUser size={18} />, roles: ['director', 'admin'] },
+      { to: '/parents', labelKey: 'nav.parents', icon: <HeartHandshake size={18} />, roles: ['director', 'admin'] },
+      { to: '/groups', labelKey: 'nav.groups', icon: <Boxes size={18} />, roles: ['director', 'admin', 'teacher'] },
+      { to: '/schedule', labelKey: 'nav.schedule', icon: <CalendarDays size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
     ],
   },
   {
-    title: 'Academics',
+    titleKey: 'nav.academics',
     items: [
-      { to: '/attendance', label: 'Attendance', icon: <ClipboardCheck size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
-      { to: '/exams', label: 'Exams', icon: <NotebookPen size={18} />, roles: ['director', 'admin', 'teacher'] },
-      { to: '/grades', label: 'Grades', icon: <FileSpreadsheet size={18} />, roles: ['director', 'admin', 'student', 'parent'] },
+      { to: '/attendance', labelKey: 'nav.attendance', icon: <ClipboardCheck size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
+      { to: '/exams', labelKey: 'nav.exams', icon: <NotebookPen size={18} />, roles: ['director', 'admin', 'teacher'] },
+      { to: '/grades', labelKey: 'nav.grades', icon: <FileSpreadsheet size={18} />, roles: ['director', 'admin', 'student', 'parent'] },
     ],
   },
   {
-    title: 'Reports',
+    titleKey: 'nav.reportsSection',
     items: [
-      { to: '/payments', label: 'Payments', icon: <Wallet size={18} />, roles: ['director', 'admin', 'student', 'parent'] },
-      { to: '/reports', label: 'Reports', icon: <BarChart3 size={18} />, roles: ['director', 'admin'] },
+      { to: '/payments', labelKey: 'nav.payments', icon: <Wallet size={18} />, roles: ['director', 'admin', 'student', 'parent'] },
+      { to: '/reports', labelKey: 'nav.reports', icon: <BarChart3 size={18} />, roles: ['director', 'admin'] },
     ],
   },
   {
-    title: 'System',
+    titleKey: 'nav.system',
     items: [
-      { to: '/users', label: 'Users & Roles', icon: <ShieldCheck size={18} />, roles: ['director', 'admin'] },
-      { to: '/notifications', label: 'Notifications', icon: <Bell size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
-      { to: '/settings', label: 'Settings', icon: <Settings size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
+      { to: '/users', labelKey: 'nav.users', icon: <ShieldCheck size={18} />, roles: ['director', 'admin'] },
+      { to: '/notifications', labelKey: 'nav.notifications', icon: <Bell size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
+      { to: '/settings', labelKey: 'nav.settings', icon: <Settings size={18} />, roles: ['director', 'admin', 'teacher', 'student', 'parent'] },
     ],
   },
 ]
 
 function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-5">
@@ -72,9 +75,9 @@ function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () 
           const items = section.items.filter((i) => i.roles.includes(role))
           if (items.length === 0) return null
           return (
-            <div key={section.title} className="mt-4">
+            <div key={section.titleKey} className="mt-4">
               <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                {section.title}
+                {t(section.titleKey)}
               </div>
               {items.map((item) => (
                 <NavLink
@@ -90,7 +93,7 @@ function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () 
                   )}
                 >
                   {item.icon}
-                  {item.label}
+                  {t(item.labelKey)}
                 </NavLink>
               ))}
             </div>
@@ -104,6 +107,7 @@ function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () 
 export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const { data: unread } = useQuery({
@@ -143,10 +147,11 @@ export default function Layout() {
           </button>
           <div className="hidden lg:block" />
           <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden sm:block" />
             <button
               onClick={() => navigate('/notifications')}
               className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100"
-              title="Notifications"
+              title={t('layout.notifications')}
             >
               <Bell size={19} />
               {(unread?.unread ?? 0) > 0 && (
@@ -161,13 +166,13 @@ export default function Layout() {
               </span>
               <div className="leading-tight">
                 <div className="text-xs font-bold text-slate-800">{user.full_name || user.username}</div>
-                <div className="text-[11px] font-semibold capitalize text-blue-600">{user.role}</div>
+                <div className="text-[11px] font-semibold text-blue-600">{t(`common.badge.${user.role}`)}</div>
               </div>
             </div>
             <button
               onClick={async () => { await logout(); navigate('/login') }}
               className="rounded-full p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
-              title="Log out"
+              title={t('layout.logout')}
             >
               <LogOut size={19} />
             </button>

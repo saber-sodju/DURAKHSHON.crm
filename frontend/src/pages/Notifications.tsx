@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Bell, CheckCheck, Wallet, ClipboardCheck, GraduationCap, CalendarDays } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Page, Notification } from '../lib/types'
@@ -16,6 +17,7 @@ const KIND_ICONS: Record<string, React.ReactNode> = {
 }
 
 export default function Notifications() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
 
@@ -36,16 +38,16 @@ export default function Notifications() {
 
   return (
     <>
-      <PageHeader title="Notifications" subtitle="Payment reminders, absences, grades and more"
+      <PageHeader title={t('notifications.title')} subtitle={t('notifications.subtitle')}
                   actions={
                     <Button variant="secondary" onClick={() => readAllMutation.mutate()}
                             loading={readAllMutation.isPending}>
-                      <CheckCheck size={15} /> Mark all read
+                      <CheckCheck size={15} /> {t('notifications.markAllRead')}
                     </Button>
                   } />
       <Card>
         {isLoading ? <TableSkeleton cols={2} /> : !data || data.items.length === 0 ? (
-          <EmptyState title="No notifications" hint="You're all caught up." />
+          <EmptyState title={t('notifications.noNotifications')} hint={t('notifications.noNotificationsHint')} />
         ) : (
           <>
             <ul className="divide-y divide-slate-100">
