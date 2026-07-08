@@ -192,7 +192,7 @@ export default function Students() {
           className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-4"
           onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}
         >
-          <Input className="max-w-xs" placeholder={t('students.searchPlaceholder')}
+          <Input className="w-full sm:max-w-xs" placeholder={t('students.searchPlaceholder')}
                  value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           <Select className="w-44" value={groupFilter}
                   onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>

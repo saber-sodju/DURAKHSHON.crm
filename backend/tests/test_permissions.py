@@ -142,6 +142,52 @@ class TestExamAndGradeRules:
         assert all(e["status"] != "draft" for e in exams)
 
 
+class TestGroupGradesForParents:
+    def _make_published_exam_with_grades(self, client, tokens, title: str):
+        exam = client.post("/api/exams", headers=tokens["teacher"], json={
+            "title": title, "group_id": 1, "exam_date": TODAY,
+            "max_score": 100, "status": "published",
+        }).json()
+        client.post("/api/grades", headers=tokens["teacher"], json={
+            "exam_id": exam["id"],
+            "items": [
+                {"student_id": 1, "score": 90},   # parent's child
+                {"student_id": 3, "score": 70},   # classmate
+            ],
+        })
+        return exam
+
+    def test_parent_sees_whole_group_grades_for_own_childs_group(self, client, tokens):
+        self._make_published_exam_with_grades(client, tokens, "Group View Exam")
+        response = client.get("/api/grades?group_id=1", headers=tokens["parent"])
+        assert response.status_code == 200
+        student_ids = {g["student_id"] for g in response.json()["items"]}
+        assert {1, 3} <= student_ids  # sees classmate's grade too
+
+    def test_parent_without_group_filter_sees_only_own_children(self, client, tokens):
+        self._make_published_exam_with_grades(client, tokens, "Own Only Exam")
+        response = client.get("/api/grades", headers=tokens["parent"])
+        assert response.status_code == 200
+        assert all(g["student_id"] == 1 for g in response.json()["items"])
+
+    def test_parent_cannot_view_foreign_group_grades(self, client, tokens):
+        response = client.get("/api/grades?group_id=2", headers=tokens["parent"])
+        assert response.status_code == 200
+        # falls back to own-children filter: no child in group 2 -> nothing foreign leaks
+        assert all(g["student_id"] == 1 for g in response.json()["items"])
+
+    def test_draft_exam_grades_hidden_in_group_view(self, client, tokens):
+        draft = client.post("/api/exams", headers=tokens["teacher"], json={
+            "title": "Draft Group Exam", "group_id": 1, "exam_date": TODAY,
+            "max_score": 100, "status": "draft",
+        }).json()
+        client.post("/api/grades", headers=tokens["teacher"], json={
+            "exam_id": draft["id"], "items": [{"student_id": 3, "score": 50}],
+        })
+        response = client.get("/api/grades?group_id=1", headers=tokens["parent"])
+        assert all(g["exam_title"] != "Draft Group Exam" for g in response.json()["items"])
+
+
 class TestPaymentRules:
     def test_partial_payment_status(self, client, tokens):
         response = client.post("/api/payments", headers=tokens["admin"], json={

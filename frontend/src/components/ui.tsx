@@ -204,14 +204,14 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, loadin
 
 export function Th({ children, className }: { children?: ReactNode; className?: string }) {
   return (
-    <th className={cn('px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500', className)}>
+    <th className={cn('whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500', className)}>
       {children}
     </th>
   )
 }
 
 export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cn('px-4 py-3 text-sm text-slate-700', className)}>{children}</td>
+  return <td className={cn('whitespace-nowrap px-4 py-3 text-sm text-slate-700', className)}>{children}</td>
 }
 
 export function TableShell({ children }: { children: ReactNode }) {
@@ -256,7 +256,7 @@ export function Pagination({ page, pageSize, total, onPage }: {
   const pages = Math.max(1, Math.ceil(total / pageSize))
   if (pages <= 1) return null
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3">
       <span className="text-xs text-slate-500">
         {t('ui.pagination', { page, pages, total })}
       </span>

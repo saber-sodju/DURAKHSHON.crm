@@ -47,7 +47,8 @@ def client():
 
         my_child = Student(user_id=student_user.id, first_name="My", last_name="Child")
         other_child = Student(first_name="Other", last_name="Child")
-        db.add_all([my_child, other_child])
+        classmate = Student(first_name="Class", last_name="Mate")
+        db.add_all([my_child, other_child, classmate])
         db.flush()
 
         parent = Parent(user_id=parent_user.id, first_name="The", last_name="Parent")
@@ -55,7 +56,7 @@ def client():
         db.add(parent)
 
         own_group = Group(name="Own Group", course_name="Math", teacher_id=teacher.id)
-        own_group.students = [my_child]
+        own_group.students = [my_child, classmate]
         other_group = Group(name="Other Group", course_name="English", teacher_id=other_teacher.id)
         other_group.students = [other_child]
         db.add_all([own_group, other_group])

@@ -120,7 +120,7 @@ export default function Teachers() {
       <Card>
         <form className="flex flex-wrap gap-2 border-b border-slate-200 p-4"
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
-          <Input className="max-w-xs" placeholder={t('teachers.searchPlaceholder')}
+          <Input className="w-full sm:max-w-xs" placeholder={t('teachers.searchPlaceholder')}
                  value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>

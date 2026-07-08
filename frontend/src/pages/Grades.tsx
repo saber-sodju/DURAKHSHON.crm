@@ -1,24 +1,56 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import type { Page, Grade } from '../lib/types'
+import type { Page, Grade, Student, Tag } from '../lib/types'
+import { useAuth } from '../context/AuthContext'
 import { formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
-import { Card, TableShell, Th, Td, EmptyState, TableSkeleton, Pagination } from '../components/ui'
+import { Card, Select, TableShell, Th, Td, EmptyState, TableSkeleton, Pagination } from '../components/ui'
 
 export default function Grades() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const isParent = user?.role === 'parent'
   const [page, setPage] = useState(1)
+  const [groupId, setGroupId] = useState('')
+
+  // parents see only their own children here; their groups feed the selector
+  const { data: children } = useQuery({
+    queryKey: ['students', 'my-children'],
+    queryFn: async () => (await api.get<Page<Student>>('/students', { params: { page_size: 100 } })).data,
+    enabled: isParent,
+  })
+
+  const childGroups = useMemo(() => {
+    const map = new Map<number, Tag>()
+    for (const child of children?.items ?? []) {
+      for (const g of child.groups) map.set(g.id, g)
+    }
+    return [...map.values()]
+  }, [children])
+
   const { data, isLoading } = useQuery({
-    queryKey: ['grades', { page }],
-    queryFn: async () => (await api.get<Page<Grade>>('/grades', { params: { page } })).data,
+    queryKey: ['grades', { page, groupId }],
+    queryFn: async () => (await api.get<Page<Grade>>('/grades', {
+      params: { page, group_id: groupId || undefined },
+    })).data,
   })
 
   return (
     <>
       <PageHeader title={t('grades.title')} subtitle={t('grades.subtitle')} />
       <Card>
+        {isParent && childGroups.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-4">
+            <Select className="w-full sm:w-64" value={groupId}
+                    onChange={(e) => { setGroupId(e.target.value); setPage(1) }}>
+              <option value="">{t('grades.scopeMyChildren')}</option>
+              {childGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </Select>
+            <span className="text-xs text-slate-400">{t('grades.groupViewHint')}</span>
+          </div>
+        )}
         {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
           <EmptyState title={t('grades.noGradesYet')} />
         ) : (

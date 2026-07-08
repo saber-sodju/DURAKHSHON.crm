@@ -146,8 +146,8 @@ export default function Layout() {
             <Menu size={18} />
           </button>
           <div className="hidden lg:block" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher className="hidden sm:block" />
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <LanguageSwitcher />
             <button
               onClick={() => navigate('/notifications')}
               className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100"
@@ -160,11 +160,11 @@ export default function Layout() {
                 </span>
               )}
             </button>
-            <div className="flex items-center gap-2.5 rounded-full bg-blue-50 py-1.5 pl-2 pr-4">
+            <div className="flex items-center gap-2.5 rounded-full bg-blue-50 p-1.5 sm:py-1.5 sm:pl-2 sm:pr-4">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                 {(user.full_name || user.username).slice(0, 1).toUpperCase()}
               </span>
-              <div className="leading-tight">
+              <div className="hidden leading-tight sm:block">
                 <div className="text-xs font-bold text-slate-800">{user.full_name || user.username}</div>
                 <div className="text-[11px] font-semibold text-blue-600">{t(`common.badge.${user.role}`)}</div>
               </div>

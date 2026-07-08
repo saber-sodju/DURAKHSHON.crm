@@ -162,10 +162,25 @@ def delete_exam(
 grades_router = APIRouter(prefix="/grades", tags=["grades"])
 
 
+def _parent_can_view_group(db: Session, user: User, group_id: int) -> bool:
+    """A parent may see the whole group's grades if at least one of their children is in it."""
+    from app.api.deps import get_parent_profile
+    from app.models import group_students
+    parent = get_parent_profile(db, user)
+    child_ids = {c.id for c in parent.children}
+    if not child_ids:
+        return False
+    return db.query(group_students).filter(
+        group_students.c.group_id == group_id,
+        group_students.c.student_id.in_(child_ids),
+    ).first() is not None
+
+
 @grades_router.get("", response_model=Page[GradeOut])
 def list_grades(
     exam_id: int | None = None,
     student_id: int | None = None,
+    group_id: int | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     user: User = Depends(get_current_user),
@@ -175,11 +190,23 @@ def list_grades(
         joinedload(Grade.student),
         joinedload(Grade.exam).joinedload(Exam.group),
     )
-    allowed = accessible_student_ids(db, user)
-    if allowed is not None:
-        query = query.filter(Grade.student_id.in_(allowed or {0}))
+    # A parent asking for a specific group their child belongs to sees the
+    # whole group's grades (published exams only) — otherwise only own children.
+    group_wide_for_parent = (
+        user.role == Role.PARENT.value
+        and group_id is not None
+        and _parent_can_view_group(db, user, group_id)
+    )
+    if not group_wide_for_parent:
+        allowed = accessible_student_ids(db, user)
+        if allowed is not None:
+            query = query.filter(Grade.student_id.in_(allowed or {0}))
     if user.role in (Role.STUDENT.value, Role.PARENT.value):
         query = query.join(Exam, Grade.exam_id == Exam.id).filter(Exam.status != "draft")
+        if group_id is not None:
+            query = query.filter(Exam.group_id == group_id)
+    elif group_id is not None:
+        query = query.join(Exam, Grade.exam_id == Exam.id).filter(Exam.group_id == group_id)
     if exam_id is not None:
         query = query.filter(Grade.exam_id == exam_id)
     if student_id is not None:

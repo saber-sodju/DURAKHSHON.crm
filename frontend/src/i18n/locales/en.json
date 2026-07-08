@@ -39,8 +39,29 @@
       "student": "Student",
       "parent": "Parent"
     },
-    "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday"
+    ],
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
     "methods": {
       "cash": "Cash",
       "card": "Card",
@@ -405,7 +426,9 @@
     "columnDate": "Date",
     "columnScore": "Score",
     "columnGrade": "Grade",
-    "columnComment": "Comment"
+    "columnComment": "Comment",
+    "scopeMyChildren": "My children only",
+    "groupViewHint": "Select your child's group to see the whole group's results"
   },
   "reports": {
     "title": "Reports",

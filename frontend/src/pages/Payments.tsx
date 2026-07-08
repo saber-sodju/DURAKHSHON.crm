@@ -154,7 +154,7 @@ export default function Payments() {
         <form className="flex flex-wrap gap-2 border-b border-slate-200 p-4"
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
           {isStaff && (
-            <Input className="max-w-xs" placeholder={t('payments.searchPlaceholder')}
+            <Input className="w-full sm:max-w-xs" placeholder={t('payments.searchPlaceholder')}
                    value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           )}
           <Select className="w-44" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
