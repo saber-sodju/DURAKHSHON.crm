@@ -34,14 +34,20 @@ export default function Login() {
     }
   }
 
+  // page background matches the logo artwork's own background, and the image
+  // edges are faded out with a mask, so the logo melts into the page instead
+  // of sitting in a visible square
+  const logoFade = 'radial-gradient(ellipse at center, black 76%, transparent 98%)'
+
   return (
-    <div className="relative flex min-h-full items-center justify-center bg-slate-900 p-4">
+    <div className="relative flex min-h-full items-center justify-center p-4"
+         style={{ backgroundColor: '#031429' }}>
       <LanguageSwitcher className="absolute right-4 top-4" />
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center gap-3">
+        <div className="mb-4 flex flex-col items-center">
           <img src="/logo.webp" alt="DURAKHSHON Learning Center"
-               className="h-40 w-40 rounded-3xl shadow-2xl ring-1 ring-white/10 sm:h-48 sm:w-48" />
-          <p className="text-sm text-slate-400">{t('login.appSubtitle')}</p>
+               className="h-64 w-64 select-none sm:h-72 sm:w-72"
+               style={{ maskImage: logoFade, WebkitMaskImage: logoFade }} />
         </div>
         <form onSubmit={handleSubmit(onSubmit)}
               className="space-y-4 rounded-2xl bg-white p-8 shadow-2xl">
