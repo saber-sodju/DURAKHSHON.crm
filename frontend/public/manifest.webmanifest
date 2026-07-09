@@ -1,13 +1,13 @@
 {
-  "name": "DURAKHSHON — Learning Center CRM",
+  "name": "DURAKHSHON — Learning Center",
   "short_name": "DURAKHSHON",
   "description": "CRM for the DURAKHSHON learning center: students, groups, attendance, grades and payments.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#2563eb",
+  "background_color": "#081930",
+  "theme_color": "#081930",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },

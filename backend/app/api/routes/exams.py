@@ -128,8 +128,8 @@ def update_exam(
             if grade.student:
                 notify_student_and_parents(
                     db, grade.student,
-                    title="New grade published",
-                    body=f"Grade for '{exam.title}': {grade.score}/{exam.max_score} ({grade.percentage}%)",
+                    title="Опубликована новая оценка",
+                    body=f"Оценка за «{exam.title}»: {grade.score}/{exam.max_score} ({grade.percentage}%)",
                     kind="grade",
                 )
     log_action(db, user, "update", "exam", exam.id, exam.title, ip=get_client_ip(request))
@@ -260,8 +260,8 @@ def upsert_grades(
             if student is not None:
                 notify_student_and_parents(
                     db, student,
-                    title="New grade published",
-                    body=f"Grade for '{exam.title}': {item.score}/{exam.max_score} ({percentage}%)",
+                    title="Опубликована новая оценка",
+                    body=f"Оценка за «{exam.title}»: {item.score}/{exam.max_score} ({percentage}%)",
                     kind="grade",
                 )
 

@@ -67,7 +67,8 @@
       "card": "Корт",
       "bank_transfer": "Гузариши бонкӣ",
       "other": "Дигар"
-    }
+    },
+    "currency": "смн"
   },
   "nav": {
     "overview": "Хулоса",
@@ -102,7 +103,6 @@
     "username": "Номи корбар",
     "password": "Парол",
     "signIn": "Воридшавӣ",
-    "demoUsers": "Корбарони озмоишӣ: director / admin / teacher / parent / student",
     "usernameRequired": "Номи корбарро ворид кунед",
     "passwordRequired": "Паролро ворид кунед"
   },

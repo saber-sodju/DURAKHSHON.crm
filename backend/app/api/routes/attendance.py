@@ -115,8 +115,8 @@ def mark_attendance(
             if student is not None:
                 notify_student_and_parents(
                     db, student,
-                    title="Absence recorded",
-                    body=f"{student.full_name} was marked absent in {group.name} on {data.date.isoformat()}",
+                    title="Отмечено отсутствие",
+                    body=f"{student.full_name}: пропуск занятия в группе {group.name} {data.date.strftime('%d.%m.%Y')}",
                     kind="attendance",
                 )
 

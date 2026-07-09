@@ -67,7 +67,8 @@
       "card": "Карта",
       "bank_transfer": "Банковский перевод",
       "other": "Другое"
-    }
+    },
+    "currency": "смн"
   },
   "nav": {
     "overview": "Обзор",
@@ -102,7 +103,6 @@
     "username": "Имя пользователя",
     "password": "Пароль",
     "signIn": "Войти",
-    "demoUsers": "Демо-пользователи: director / admin / teacher / parent / student",
     "usernameRequired": "Введите имя пользователя",
     "passwordRequired": "Введите пароль"
   },

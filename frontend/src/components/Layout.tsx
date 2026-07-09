@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
-  GraduationCap, LayoutDashboard, Users, BookUser, HeartHandshake, Boxes,
+  LayoutDashboard, Users, BookUser, HeartHandshake, Boxes,
   CalendarDays, ClipboardCheck, Wallet, FileSpreadsheet, BarChart3,
   ShieldCheck, Bell, Settings, LogOut, Menu, X, NotebookPen,
 } from 'lucide-react'
@@ -66,8 +66,8 @@ function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () 
   const { t } = useTranslation()
   return (
     <>
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <GraduationCap size={28} className="text-blue-400" />
+      <div className="flex items-center gap-3 px-5 py-5">
+        <img src="/logo.webp" alt="DURAKHSHON" className="h-10 w-10 rounded-xl ring-1 ring-white/10" />
         <span className="text-lg font-extrabold tracking-wide text-white">DURAKHSHON</span>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 pb-6">

@@ -67,7 +67,8 @@
       "card": "Card",
       "bank_transfer": "Bank transfer",
       "other": "Other"
-    }
+    },
+    "currency": "TJS"
   },
   "nav": {
     "overview": "Overview",
@@ -102,7 +103,6 @@
     "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
-    "demoUsers": "Demo users: director / admin / teacher / parent / student",
     "usernameRequired": "Username is required",
     "passwordRequired": "Password is required"
   },

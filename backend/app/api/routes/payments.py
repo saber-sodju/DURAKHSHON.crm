@@ -121,11 +121,12 @@ def create_payment(
     db.flush()
 
     if payment.status in ("unpaid", "partial", "overdue"):
+        status_ru = {"unpaid": "не оплачено", "partial": "частично оплачено", "overdue": "просрочено"}
         notify_student_and_parents(
             db, student,
-            title="Payment due",
-            body=f"Payment of {data.amount} for {group.name if group else 'tuition'} "
-                 f"({data.month:02d}/{data.year}) — status: {payment.status}",
+            title="Ожидается оплата",
+            body=f"Оплата {data.amount} смн за {group.name if group else 'обучение'} "
+                 f"({data.month:02d}/{data.year}) — статус: {status_ru.get(payment.status, payment.status)}",
             kind="payment",
         )
     log_action(db, actor, "create", "payment", payment.id,
@@ -157,8 +158,8 @@ def update_payment(
     if payment.status == "paid" and not was_paid:
         notify_student_and_parents(
             db, student,
-            title="Payment received",
-            body=f"Payment for {payment.month:02d}/{payment.year} has been marked as paid. Thank you!",
+            title="Оплата получена",
+            body=f"Оплата за {payment.month:02d}/{payment.year} отмечена как полученная. Спасибо!",
             kind="payment",
         )
     log_action(db, actor, "update", "payment", payment.id,

@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
-import { GraduationCap } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { apiErrorMessage } from '../lib/api'
 import { Button, Input, Field } from '../components/ui'
@@ -39,11 +38,9 @@ export default function Login() {
     <div className="relative flex min-h-full items-center justify-center bg-slate-900 p-4">
       <LanguageSwitcher className="absolute right-4 top-4" />
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <div className="rounded-2xl bg-blue-600/20 p-4">
-            <GraduationCap size={40} className="text-blue-400" />
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-wide text-white">{t('login.appTitle')}</h1>
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <img src="/logo.webp" alt="DURAKHSHON Learning Center"
+               className="h-40 w-40 rounded-3xl shadow-2xl ring-1 ring-white/10 sm:h-48 sm:w-48" />
           <p className="text-sm text-slate-400">{t('login.appSubtitle')}</p>
         </div>
         <form onSubmit={handleSubmit(onSubmit)}
@@ -63,9 +60,6 @@ export default function Login() {
           <Button type="submit" className="w-full" loading={formState.isSubmitting}>
             {t('login.signIn')}
           </Button>
-          <p className="text-center text-xs text-slate-400">
-            {t('login.demoUsers')}
-          </p>
         </form>
       </div>
     </div>
