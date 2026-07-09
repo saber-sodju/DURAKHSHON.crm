@@ -67,7 +67,7 @@ function SidebarContent({ role, onNavigate }: { role: RoleName; onNavigate?: () 
   return (
     <>
       <div className="flex items-center gap-3 px-5 py-5">
-        <img src="/logo.webp" alt="DURAKHSHON" className="h-10 w-10 rounded-xl ring-1 ring-white/10" />
+        <img src="/logo-mark.webp" alt="DURAKHSHON" className="h-11 w-11" />
         <span className="text-lg font-extrabold tracking-wide text-white">DURAKHSHON</span>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 pb-6">

@@ -34,11 +34,8 @@ export default function Login() {
     }
   }
 
-  // page background matches the logo artwork's own background, and the image
-  // edges are faded out with a mask, so the logo melts into the page instead
-  // of sitting in a visible square
-  const logoFade = 'radial-gradient(ellipse at center, black 76%, transparent 98%)'
-
+  // the logo image has a transparent background, so it sits directly on the
+  // solid page color with no visible frame
   return (
     <div className="relative flex min-h-full items-center justify-center p-4"
          style={{ backgroundColor: '#031429' }}>
@@ -46,8 +43,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="mb-4 flex flex-col items-center">
           <img src="/logo.webp" alt="DURAKHSHON Learning Center"
-               className="h-64 w-64 select-none sm:h-72 sm:w-72"
-               style={{ maskImage: logoFade, WebkitMaskImage: logoFade }} />
+               className="h-60 w-60 select-none sm:h-72 sm:w-72" />
         </div>
         <form onSubmit={handleSubmit(onSubmit)}
               className="space-y-4 rounded-2xl bg-white p-8 shadow-2xl">
