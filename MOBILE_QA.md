@@ -1,40 +1,62 @@
 # Mobile QA checklist — DURAKHSHON CRM
 
-Test on real widths: **360px, 390px, 430px** (phones) and **768px** (tablet).
-In desktop Chrome: DevTools → device toolbar → set width.
+Test widths: **360px** (small Android), **390px** (iPhone), **430px** (large phone),
+**768px** (tablet), plus desktop. In Chrome: DevTools → device toolbar.
 
-## What was done for mobile
+Verified with headless Chrome at 360px: **0px horizontal overflow** on Dashboard and
+Payments; sticky modal footers and the attendance card layout render correctly.
 
-- **Sidebar** is a slide-in drawer on phones: the menu button opens it, an overlay
-  closes it on tap outside, and it closes automatically after navigating.
-- **No horizontal page scroll** — `overflow-x: hidden` on body and main content.
-- **Tables become cards** on phones (`ResponsiveTable`): each row is a card with the
-  name as the title and the rest as label → value lines; actions sit in a footer row.
-  Desktop keeps normal tables.
-- **Safe area**: `viewport-fit=cover` + `env(safe-area-inset-bottom)` padding so
-  content and buttons clear the phone's bottom browser bar.
-- **Modals**: capped at `100dvh`, header fixed, body scrolls — Save/Cancel stay
-  reachable; inputs/buttons are ≥44px tall; number/date fields use 16px text so iOS
-  doesn't zoom on focus.
-- **Dashboard** cards stack to one column; charts are width-constrained.
+## What the mobile build does
 
-## Checklist
+- **Sidebar** is a slide-in drawer on phones (80% width, max 20rem): opens with the
+  menu button, closes on overlay tap / page navigation / X. Clears the status bar
+  via `safe-area-inset-top`.
+- **Header** clears the notch (`safe-area-inset-top`); language pill hidden on phones
+  (it's in Settings) so bell / avatar / logout aren't cramped.
+- **No horizontal page scroll** (`overflow-x: hidden` on body + main); wide tables
+  scroll *inside their own card*, never the page.
+- **Tables → cards** on phones via `ResponsiveTable`: Students, Teachers, Parents,
+  Groups, Payments, Attendance, Exams, Grades, Users. Each row becomes a card with a
+  bold title and label→value lines; actions in a footer row.
+- **Modals**: capped to `100dvh`, sticky header, scrollable body, **sticky footer**
+  (Save/Cancel) with `safe-area-inset-bottom` padding — buttons never hide behind the
+  browser bar. Near-full-width on phones.
+- **Forms**: single column, full-width inputs, ≥44px tall, 16px font on number/date
+  inputs (stops iOS zoom-on-focus).
+- **Filters/search**: full-width and stacked on phones, one row on desktop; Search
+  button full-width on phones.
+- **Attendance marking**: big Present/Absent/Late/Excused buttons (2-col grid on
+  phones, ≥44px), a **Mark all present** shortcut, and a sticky **Save attendance**
+  footer.
+- **Dashboard**: stat cards 1 col (phone) → 2 (tablet) → 4 (desktop); charts inside
+  `ResponsiveContainer`; recent lists contained within their cards.
+- **PWA**: manifest + theme color + apple meta; installable to the home screen.
 
-- [ ] Login page: logo and form fit, "keep me signed in" visible, no side scroll
-- [ ] Login works on the phone; stays logged in after closing/reopening the browser
-- [ ] Sidebar: opens with menu button, closes on overlay tap, closes after navigating
-- [ ] Dashboard readable; stat cards stack; charts don't overflow
-- [ ] Students: cards show name / phone / parent / groups / status; Edit & Delete work
-- [ ] Teachers: cards usable; actions work
-- [ ] Parents: cards usable; children listed
-- [ ] Groups: cards show teacher / students / schedule / price; open group works
-- [ ] Attendance: records show as cards; "Mark attendance" modal fits and scrolls
-- [ ] Payments: cards show amount / status / period; add/edit modal fits
-- [ ] Exams: cards usable; "enter grades" modal fits and scrolls; buttons reachable
-- [ ] Grades: cards readable; parent group-results selector works
-- [ ] Reports (director/admin): tables scroll horizontally inside their card only
-- [ ] Group results / gradebook readable on a phone
-- [ ] Settings: change password, My devices, Backups (director) all usable
-- [ ] No control is hidden behind the bottom browser bar
-- [ ] No element overflows the screen or causes the whole page to scroll sideways
-- [ ] Language switch (EN / RU / TG) works and layout still fits
+## Per-page checklist
+
+- [ ] Login: logo + form fit, "keep me signed in" visible, no side scroll
+- [ ] Dashboard: stat cards stack, charts fit, recent lists readable
+- [ ] Students / Teachers / Parents / Groups: card list, Edit/Delete tappable
+- [ ] GroupDetails: details + schedule readable; inner tables scroll in-card only
+- [ ] Schedule: day cards readable
+- [ ] Attendance: list as cards; Mark modal — big buttons, Mark-all-present, sticky Save
+- [ ] Payments: cards; add/edit modal sticky footer
+- [ ] Exams: cards; enter-grades modal sticky footer, score inputs usable
+- [ ] Grades: cards; parent group-results selector works
+- [ ] Reports: filters stack; data tables scroll inside card
+- [ ] Users: cards; add/edit modal sticky footer; audit log scrolls in-card
+- [ ] Notifications: list readable
+- [ ] Settings: change password, My devices, Backups (director) usable
+- [ ] No control hidden behind the bottom browser bar on any page
+- [ ] No element causes the whole page to scroll sideways
+
+## Manual test matrix
+
+- Roles: director, admin, teacher, parent, student
+- Browsers: iPhone Safari, Android Chrome
+- Installed PWA (home-screen shortcut) — remove & re-add after each deploy to bust cache
+
+## Known acceptable limitations
+
+- Reports analytics tables and the audit log stay as horizontally-scrollable tables
+  inside their card (dense, staff/desktop-oriented) rather than cards.

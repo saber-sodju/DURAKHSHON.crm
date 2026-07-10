@@ -12,6 +12,7 @@ import {
   Button, Input, Select, Field, Badge, Card, Modal, ConfirmDialog,
   TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 interface UserDraft {
   username: string
@@ -142,43 +143,34 @@ export default function UsersPage() {
         </div>
 
         {tab === 'users' ? (
-          isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-            <EmptyState title={t('users.noUsers')} />
-          ) : (
+          isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
             <>
-              <TableShell>
-                <thead className="bg-slate-50">
-                  <tr>
-                    <Th>{t('users.columnUsername')}</Th><Th>{t('users.columnFullName')}</Th><Th>{t('users.columnEmail')}</Th>
-                    <Th>{t('users.columnRole')}</Th><Th>{t('users.columnStatus')}</Th><Th>{t('users.columnCreated')}</Th>
-                    <Th className="text-right">{t('common.actions')}</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.items.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50">
-                      <Td className="font-semibold text-slate-800">{u.username}</Td>
-                      <Td>{u.full_name || '—'}</Td>
-                      <Td>{u.email ?? '—'}</Td>
-                      <Td><Badge value={u.role} /></Td>
-                      <Td><Badge value={u.is_active ? 'active' : 'inactive'} /></Td>
-                      <Td>{formatDate(u.created_at)}</Td>
-                      <Td className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(u)} title={t('common.edit')}>
-                            <Pencil size={15} className="text-blue-600" />
+              <ResponsiveTable
+                rows={data.items}
+                rowKey={(u) => u.id}
+                emptyTitle={t('users.noUsers')}
+                columns={[
+                  { key: 'username', header: t('users.columnUsername'), primary: true, cell: (u) => u.username },
+                  { key: 'fullName', header: t('users.columnFullName'), cell: (u) => u.full_name || '—' },
+                  { key: 'email', header: t('users.columnEmail'), cell: (u) => u.email ?? '—' },
+                  { key: 'role', header: t('users.columnRole'), cell: (u) => <Badge value={u.role} /> },
+                  { key: 'status', header: t('users.columnStatus'), cell: (u) => <Badge value={u.is_active ? 'active' : 'inactive'} /> },
+                  { key: 'created', header: t('users.columnCreated'), cell: (u) => formatDate(u.created_at) },
+                  { key: 'actions', header: t('common.actions'), actions: true,
+                    cell: (u) => (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(u)} title={t('common.edit')}>
+                          <Pencil size={15} className="text-blue-600" />
+                        </Button>
+                        {isDirector && u.role !== 'director' && u.is_active && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeactivating(u)} title={t('common.deactivate')}>
+                            <ShieldOff size={15} className="text-red-500" />
                           </Button>
-                          {isDirector && u.role !== 'director' && u.is_active && (
-                            <Button variant="ghost" size="sm" onClick={() => setDeactivating(u)} title={t('common.deactivate')}>
-                              <ShieldOff size={15} className="text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </TableShell>
+                        )}
+                      </>
+                    ) },
+                ]}
+              />
               <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
             </>
           )
@@ -214,7 +206,15 @@ export default function UsersPage() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('users.editUser', { username: editing.username }) : t('users.addUserTitle')}>
+             title={editing ? t('users.editUser', { username: editing.username }) : t('users.addUserTitle')}
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+                   {editing ? t('common.saveChanges') : t('users.createUser')}
+                 </Button>
+               </div>
+             }>
         <div className="space-y-4">
           {!editing && (
             <>
@@ -254,12 +254,6 @@ export default function UsersPage() {
             <Input type="password" value={draft.password}
                    onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
           </Field>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-            <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-              {editing ? t('common.saveChanges') : t('users.createUser')}
-            </Button>
-          </div>
         </div>
       </Modal>
 

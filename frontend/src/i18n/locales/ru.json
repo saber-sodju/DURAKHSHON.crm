@@ -348,7 +348,8 @@
     "statusPresent": "присутствовал",
     "statusAbsent": "отсутствовал",
     "statusLate": "опоздал",
-    "statusExcused": "уважительная причина"
+    "statusExcused": "уважительная причина",
+    "markAllPresent": "Отметить всех присутствующими"
   },
   "payments": {
     "title": "Оплаты",

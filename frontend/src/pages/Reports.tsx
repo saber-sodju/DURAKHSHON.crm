@@ -99,16 +99,16 @@ export default function Reports() {
 
         {tab !== 'workload' && (
           <div className="flex flex-wrap gap-2 border-b border-slate-200 p-4">
-            <Select className="w-44" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <Select className="w-full sm:w-44" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
               <option value="">{t('reports.allGroups')}</option>
               {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
             {tab === 'attendance' && (
-              <>
-                <Input type="date" className="w-40" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <Input type="date" className="flex-1 sm:w-40" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
                 <span className="self-center text-slate-400">–</span>
-                <Input type="date" className="w-40" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-              </>
+                <Input type="date" className="flex-1 sm:w-40" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              </div>
             )}
           </div>
         )}

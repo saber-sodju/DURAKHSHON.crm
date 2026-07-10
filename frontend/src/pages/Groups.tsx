@@ -175,7 +175,7 @@ export default function Groups() {
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
           <Input className="w-full sm:max-w-xs" placeholder={t('groups.searchPlaceholder')}
                  value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
+          <Button type="submit" variant="secondary" className="w-full sm:w-auto"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
         {isLoading ? <TableSkeleton cols={7} /> : !data ? null : (
@@ -221,8 +221,14 @@ export default function Groups() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('groups.editGroup') : t('groups.addGroupTitle')} wide>
-        <form onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
+             title={editing ? t('groups.editGroup') : t('groups.addGroupTitle')} wide
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button type="submit" form="group-form" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('groups.createGroup')}</Button>
+               </div>
+             }>
+        <form id="group-form" onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('groups.groupName')} required error={formState.errors.name?.message}>
               <Input placeholder={t('groups.groupNamePlaceholder')} {...register('name')} />
@@ -255,21 +261,24 @@ export default function Groups() {
           <Field label={t('groups.weeklySchedule')}>
             <div className="space-y-2">
               {slots.map((slot, i) => (
-                <div key={i} className="flex flex-wrap items-center gap-2">
-                  <Select className="w-32" value={slot.day_of_week}
+                <div key={i} className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg border border-slate-100 p-2 sm:flex sm:flex-wrap sm:border-0 sm:p-0">
+                  <Select className="col-span-1 w-full sm:w-32" value={slot.day_of_week}
                           onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, day_of_week: Number(e.target.value) } : s))}>
                     {dayNames.map((d, di) => <option key={di} value={di}>{d}</option>)}
                   </Select>
-                  <Input type="time" className="w-28" value={slot.start_time}
-                         onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, start_time: e.target.value } : s))} />
-                  <span className="text-slate-400">–</span>
-                  <Input type="time" className="w-28" value={slot.end_time}
-                         onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, end_time: e.target.value } : s))} />
-                  <Input placeholder={t('groupDetails.columnRoom')} className="w-24" value={slot.room}
-                         onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, room: e.target.value } : s))} />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setSlots(slots.filter((_, j) => j !== i))}>
-                    <X size={15} className="text-red-500" />
+                  <Button type="button" variant="ghost" size="sm" className="justify-self-end sm:order-last"
+                          onClick={() => setSlots(slots.filter((_, j) => j !== i))}>
+                    <X size={16} className="text-red-500" />
                   </Button>
+                  <div className="col-span-2 flex items-center gap-2 sm:contents">
+                    <Input type="time" className="flex-1 sm:w-28" value={slot.start_time}
+                           onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, start_time: e.target.value } : s))} />
+                    <span className="text-slate-400">–</span>
+                    <Input type="time" className="flex-1 sm:w-28" value={slot.end_time}
+                           onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, end_time: e.target.value } : s))} />
+                    <Input placeholder={t('groupDetails.columnRoom')} className="w-20 sm:w-24" value={slot.room}
+                           onChange={(e) => setSlots(slots.map((s, j) => j === i ? { ...s, room: e.target.value } : s))} />
+                  </div>
                 </div>
               ))}
               <Button type="button" variant="secondary" size="sm"
@@ -297,10 +306,6 @@ export default function Groups() {
             </div>
           </Field>
 
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-            <Button type="submit" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('groups.createGroup')}</Button>
-          </div>
         </form>
       </Modal>
 

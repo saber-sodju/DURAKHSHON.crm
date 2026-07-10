@@ -195,18 +195,18 @@ export default function Students() {
         >
           <Input className="w-full sm:max-w-xs" placeholder={t('students.searchPlaceholder')}
                  value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          <Select className="w-44" value={groupFilter}
+          <Select className="w-full sm:w-44" value={groupFilter}
                   onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>
             <option value="">{t('students.allGroups')}</option>
             {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </Select>
-          <Select className="w-36" value={statusFilter}
+          <Select className="w-full sm:w-36" value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
             <option value="">{t('students.allStatuses')}</option>
             <option value="active">{t('common.badge.active')}</option>
             <option value="inactive">{t('common.badge.inactive')}</option>
           </Select>
-          <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
+          <Button type="submit" variant="secondary" className="w-full sm:w-auto"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
         {isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
@@ -256,8 +256,14 @@ export default function Students() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('students.editStudent') : t('students.addStudentTitle')} wide>
-        <form onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
+             title={editing ? t('students.editStudent') : t('students.addStudentTitle')} wide
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button type="submit" form="student-form" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('students.createStudent')}</Button>
+               </div>
+             }>
+        <form id="student-form" onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
               <Input {...register('first_name')} />
@@ -296,10 +302,6 @@ export default function Students() {
             />
           </Field>
           <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-            <Button type="submit" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('students.createStudent')}</Button>
-          </div>
         </form>
       </Modal>
 

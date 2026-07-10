@@ -109,7 +109,7 @@ export default function Parents() {
               onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput) }}>
           <Input className="w-full sm:max-w-xs" placeholder={t('parents.searchPlaceholder')} value={searchInput}
                  onChange={(e) => setSearchInput(e.target.value)} />
-          <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
+          <Button type="submit" variant="secondary" className="w-full sm:w-auto"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
         {isLoading ? <TableSkeleton cols={5} /> : !data ? null : (
@@ -152,8 +152,14 @@ export default function Parents() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('parents.editParent') : t('parents.addParentTitle')}>
-        <form onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
+             title={editing ? t('parents.editParent') : t('parents.addParentTitle')}
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button type="submit" form="parent-form" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('parents.createParent')}</Button>
+               </div>
+             }>
+        <form id="parent-form" onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
               <Input {...register('first_name')} />
@@ -182,10 +188,6 @@ export default function Parents() {
             </div>
           </Field>
           <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-            <Button type="submit" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('parents.createParent')}</Button>
-          </div>
         </form>
       </Modal>
 

@@ -158,14 +158,14 @@ export default function Payments() {
             <Input className="w-full sm:max-w-xs" placeholder={t('payments.searchPlaceholder')}
                    value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           )}
-          <Select className="w-44" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
+          <Select className="w-full sm:w-44" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
             <option value="">{t('payments.allStatuses')}</option>
             <option value="paid">{t('common.badge.paid')}</option>
             <option value="unpaid">{t('common.badge.unpaid')}</option>
             <option value="partial">{t('common.badge.partial')}</option>
             <option value="overdue">{t('common.badge.overdue')}</option>
           </Select>
-          {isStaff && <Button type="submit" variant="secondary"><Search size={15} /></Button>}
+          {isStaff && <Button type="submit" variant="secondary" className="w-full sm:w-auto"><Search size={15} /> {t('common.search')}</Button>}
         </form>
 
         {isLoading ? <TableSkeleton cols={8} /> : !data ? null : (
@@ -203,7 +203,15 @@ export default function Payments() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('payments.editPayment') : t('payments.addPaymentTitle')} wide>
+             title={editing ? t('payments.editPayment') : t('payments.addPaymentTitle')} wide
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+                   {editing ? t('common.saveChanges') : t('payments.createPayment')}
+                 </Button>
+               </div>
+             }>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t('payments.student')} required>
             <Select value={draft.student_id} onChange={(e) => updateDraft({ student_id: e.target.value })}>
@@ -261,12 +269,6 @@ export default function Payments() {
         <p className="mt-2 text-xs text-slate-400">
           {t('payments.statusHint')}
         </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-          <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-            {editing ? t('common.saveChanges') : t('payments.createPayment')}
-          </Button>
-        </div>
       </Modal>
 
       <ConfirmDialog

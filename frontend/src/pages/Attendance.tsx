@@ -76,8 +76,29 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
     onError: (e) => toast(apiErrorMessage(e), 'error'),
   })
 
+  const activeStatus: Record<string, string> = {
+    present: 'bg-emerald-600 text-white', absent: 'bg-red-600 text-white',
+    late: 'bg-amber-500 text-white', excused: 'bg-blue-600 text-white',
+  }
+  const markAllPresent = () => {
+    if (!group) return
+    const next: Record<number, { status: string; note: string }> = {}
+    for (const s of group.students) next[s.id] = { status: 'present', note: marks[s.id]?.note ?? '' }
+    setMarks(next)
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title={t('attendance.modalTitle')} wide>
+    <Modal open={open} onClose={onClose} title={t('attendance.modalTitle')} wide
+           footer={
+             <div className="flex justify-end gap-2">
+               <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+               <Button disabled={!groupId || !group || group.students.length === 0}
+                       loading={saveMutation.isPending}
+                       onClick={() => saveMutation.mutate()}>
+                 {t('attendance.saveAttendance')}
+               </Button>
+             </div>
+           }>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t('attendance.group')} required>
           <Select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
@@ -92,45 +113,39 @@ function MarkAttendanceModal({ open, onClose, initialGroupId }: {
         </Field>
       </div>
 
+      {group && group.students.length > 0 && (
+        <div className="mt-4 flex justify-end">
+          <Button variant="secondary" size="sm" onClick={markAllPresent}>
+            {t('attendance.markAllPresent')}
+          </Button>
+        </div>
+      )}
+
       {group && (
-        <div className="mt-4 max-h-96 overflow-y-auto rounded-lg border border-slate-200">
+        <div className="mt-3 space-y-2">
           {group.students.length === 0 ? (
             <p className="p-4 text-sm text-slate-400">{t('attendance.noStudentsInGroup')}</p>
           ) : group.students.map((s) => (
-            <div key={s.id} className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-3 py-2.5 last:border-0">
-              <span className="w-40 text-sm font-semibold text-slate-700">{s.first_name} {s.last_name}</span>
-              <div className="flex gap-1">
+            <div key={s.id} className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 text-sm font-semibold text-slate-800">{s.first_name} {s.last_name}</div>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {STATUSES.map((st) => (
                   <button key={st} type="button"
                           onClick={() => setMarks({ ...marks, [s.id]: { ...(marks[s.id] ?? { note: '' }), status: st } })}
-                          className={`rounded-md px-2 py-1 text-xs font-semibold transition-colors ${
-                            marks[s.id]?.status === st
-                              ? st === 'present' ? 'bg-emerald-600 text-white'
-                                : st === 'absent' ? 'bg-red-600 text-white'
-                                : st === 'late' ? 'bg-amber-500 text-white'
-                                : 'bg-blue-600 text-white'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          className={`min-h-11 rounded-md px-2 text-sm font-semibold transition-colors ${
+                            marks[s.id]?.status === st ? activeStatus[st] : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                           }`}>
                     {t(`common.badge.${st}`)}
                   </button>
                 ))}
               </div>
-              <Input className="min-w-32 flex-1" placeholder={t('attendance.notePlaceholder')}
+              <Input className="mt-2" placeholder={t('attendance.notePlaceholder')}
                      value={marks[s.id]?.note ?? ''}
                      onChange={(e) => setMarks({ ...marks, [s.id]: { ...(marks[s.id] ?? { status: 'present' }), note: e.target.value } })} />
             </div>
           ))}
         </div>
       )}
-
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button disabled={!groupId || !group || group.students.length === 0}
-                loading={saveMutation.isPending}
-                onClick={() => saveMutation.mutate()}>
-          {t('attendance.saveAttendance')}
-        </Button>
-      </div>
     </Modal>
   )
 }
@@ -189,18 +204,20 @@ export default function Attendance() {
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-4">
           {isStaffOrTeacher && (
-            <Select className="w-44" value={groupFilter} onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>
+            <Select className="w-full sm:w-44" value={groupFilter} onChange={(e) => { setGroupFilter(e.target.value); setPage(1) }}>
               <option value="">{t('attendance.allGroups')}</option>
               {groups?.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
           )}
-          <Select className="w-36" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
+          <Select className="w-full sm:w-36" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
             <option value="">{t('attendance.allStatuses')}</option>
             {STATUSES.map((s) => <option key={s} value={s}>{t(`common.badge.${s}`)}</option>)}
           </Select>
-          <Input type="date" className="w-40" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} />
-          <span className="text-slate-400">–</span>
-          <Input type="date" className="w-40" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} />
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Input type="date" className="flex-1 sm:w-40" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} />
+            <span className="text-slate-400">–</span>
+            <Input type="date" className="flex-1 sm:w-40" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} />
+          </div>
           <span className="ml-auto hidden items-center gap-1 text-xs text-slate-400 sm:flex">
             <Filter size={13} /> {data?.total ?? 0} {t('attendance.records')}
           </span>

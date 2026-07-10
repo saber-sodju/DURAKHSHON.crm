@@ -81,14 +81,20 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
   })
 
   return (
-    <Modal open onClose={onClose} title={t('exams.gradesModalTitle', { title: exam.title, max: exam.max_score })} wide>
+    <Modal open onClose={onClose} title={t('exams.gradesModalTitle', { title: exam.title, max: exam.max_score })} wide
+           footer={
+             <div className="flex justify-end gap-2">
+               <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+               <Button loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>{t('exams.saveGrades')}</Button>
+             </div>
+           }>
       {!group ? <TableSkeleton /> : rows.length === 0 ? (
         <EmptyState title={t('exams.noStudentsInGroup')} />
       ) : (
-        <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200">
+        <div className="rounded-lg border border-slate-200">
           {rows.map(({ student, grade }) => (
             <div key={student.id} className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-3 py-2.5 last:border-0">
-              <span className="w-40 text-sm font-semibold text-slate-700">
+              <span className="w-full text-sm font-semibold text-slate-700 sm:w-40">
                 {student.first_name} {student.last_name}
               </span>
               <Input type="number" min="0" max={exam.max_score} step="0.5" className="w-24"
@@ -108,10 +114,6 @@ function GradesModal({ exam, onClose }: { exam: Exam; onClose: () => void }) {
       <p className="mt-3 text-xs text-slate-400">
         {t('exams.gradesHint')}
       </p>
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>{t('exams.saveGrades')}</Button>
-      </div>
     </Modal>
   )
 }
@@ -190,7 +192,7 @@ export default function Exams() {
                   actions={<Button onClick={openCreate}><Plus size={16} /> {t('exams.addExam')}</Button>} />
       <Card>
         <div className="flex flex-wrap gap-2 border-b border-slate-200 p-4">
-          <Select className="w-40" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
+          <Select className="w-full sm:w-40" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
             <option value="">{t('exams.allStatuses')}</option>
             <option value="draft">{t('exams.statusDraft')}</option>
             <option value="published">{t('exams.statusPublished')}</option>
@@ -235,7 +237,15 @@ export default function Exams() {
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-             title={editing ? t('exams.editExam') : t('exams.addExamTitle')}>
+             title={editing ? t('exams.editExam') : t('exams.addExamTitle')}
+             footer={
+               <div className="flex justify-end gap-2">
+                 <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                 <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+                   {editing ? t('common.saveChanges') : t('exams.createExam')}
+                 </Button>
+               </div>
+             }>
         <div className="space-y-4">
           <Field label={t('exams.examTitle')} required>
             <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
@@ -265,12 +275,6 @@ export default function Exams() {
           <Field label={t('exams.description')}>
             <Textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
           </Field>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
-            <Button disabled={!valid} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-              {editing ? t('common.saveChanges') : t('exams.createExam')}
-            </Button>
-          </div>
         </div>
       </Modal>
 

@@ -348,7 +348,8 @@
     "statusPresent": "ҳозир",
     "statusAbsent": "ғоиб",
     "statusLate": "дер монда",
-    "statusExcused": "бо сабаби узрнок"
+    "statusExcused": "бо сабаби узрнок",
+    "markAllPresent": "Ҳамаро ҳозир қайд кардан"
   },
   "payments": {
     "title": "Пардохтҳо",

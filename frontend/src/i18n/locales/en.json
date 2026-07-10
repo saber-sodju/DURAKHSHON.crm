@@ -348,7 +348,8 @@
     "statusPresent": "present",
     "statusAbsent": "absent",
     "statusLate": "late",
-    "statusExcused": "excused"
+    "statusExcused": "excused",
+    "markAllPresent": "Mark all present"
   },
   "payments": {
     "title": "Payments",

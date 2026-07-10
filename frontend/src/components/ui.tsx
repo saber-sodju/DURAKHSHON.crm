@@ -139,12 +139,14 @@ export function Card({ className, children }: { className?: string; children: Re
 
 // ---------- Modal ----------
 
-export function Modal({ open, onClose, title, children, wide }: {
+export function Modal({ open, onClose, title, children, wide, footer }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
   wide?: boolean
+  /** sticky action bar pinned to the bottom of the modal (e.g. Save / Cancel) */
+  footer?: ReactNode
 }) {
   useEffect(() => {
     if (!open) return
@@ -155,19 +157,25 @@ export function Modal({ open, onClose, title, children, wide }: {
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/50 p-3 sm:p-8"
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/50 p-2 sm:p-8"
          onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cn(
-        'flex max-h-[calc(100dvh-1.5rem)] w-full flex-col rounded-xl bg-white shadow-2xl sm:max-h-[calc(100dvh-4rem)]',
+        'flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100dvh-4rem)]',
         wide ? 'max-w-3xl' : 'max-w-lg',
       )}>
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-bold text-slate-800">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-            <X size={18} />
+          <h2 className="truncate pr-3 text-base font-bold text-slate-800">{title}</h2>
+          <button onClick={onClose} aria-label="Close"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <X size={20} />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        {footer && (
+          <div className="shrink-0 border-t border-slate-200 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )
