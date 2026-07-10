@@ -8,6 +8,7 @@ import os
 from datetime import date, time, timedelta
 from decimal import Decimal
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine, Base
 from app.models import (
@@ -20,6 +21,9 @@ DEMO_PASSWORD = os.environ.get("SEED_DEMO_PASSWORD", "Demo1234!")
 
 
 def seed() -> None:
+    if not settings.SEED_DEMO:
+        print("SEED_DEMO is not enabled — skipping demo seed (this is correct for production).")
+        return
     Base.metadata.create_all(engine)
     db = SessionLocal()
     try:

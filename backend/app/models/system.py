@@ -20,6 +20,24 @@ class Notification(Base):
     user = relationship("User")
 
 
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # sha256 of the current refresh token's jti — never the token/jti itself
+    refresh_token_jti_hash: Mapped[str] = mapped_column(String(64), index=True)
+    device_name: Mapped[str] = mapped_column(String(120), default="")
+    user_agent: Mapped[str] = mapped_column(String(400), default="")
+    ip_address: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User")
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

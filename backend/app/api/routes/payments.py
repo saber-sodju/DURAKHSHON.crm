@@ -17,23 +17,18 @@ router = APIRouter(prefix="/payments", tags=["payments"])
 VIEWER_ROLES = (Role.DIRECTOR.value, Role.ADMIN.value, Role.PARENT.value, Role.STUDENT.value)
 
 
+def _effective_status(payment: Payment) -> str:
+    """Overdue is derived from the due date, so compute it for display rather than
+    relying on a possibly-stale stored value. Never writes to the DB (safe for GET)."""
+    return compute_payment_status(payment.amount, payment.paid_amount, payment.due_date)
+
+
 def _serialize(payment: Payment) -> PaymentOut:
     out = PaymentOut.model_validate(payment)
+    out.status = _effective_status(payment)
     out.student_name = payment.student.full_name if payment.student else None
     out.group_name = payment.group.name if payment.group else None
     return out
-
-
-def _refresh_overdue(db: Session, payments: list[Payment]) -> None:
-    """Keep stored status in sync with the due-date rule when records are read."""
-    changed = False
-    for payment in payments:
-        new_status = compute_payment_status(payment.amount, payment.paid_amount, payment.due_date)
-        if payment.status != new_status:
-            payment.status = new_status
-            changed = True
-    if changed:
-        db.commit()
 
 
 @router.get("", response_model=Page[PaymentOut])
@@ -70,17 +65,14 @@ def list_payments(
     if year is not None:
         query = query.filter(Payment.year == year)
 
-    all_matching = query.all()
-    _refresh_overdue(db, all_matching)
-
+    rows = query.order_by(Payment.year.desc(), Payment.month.desc(), Payment.id.desc()).all()
+    items = [_serialize(p) for p in rows]
+    # filter on the computed status (overdue is derived, not stored reliably)
     if status_filter:
-        query = query.filter(Payment.status == status_filter)
-    total = query.count()
-    payments = (
-        query.order_by(Payment.year.desc(), Payment.month.desc(), Payment.id.desc())
-        .offset((page - 1) * page_size).limit(page_size).all()
-    )
-    return Page(items=[_serialize(p) for p in payments], total=total, page=page, page_size=page_size)
+        items = [i for i in items if i.status == status_filter]
+    total = len(items)
+    start = (page - 1) * page_size
+    return Page(items=items[start:start + page_size], total=total, page=page, page_size=page_size)
 
 
 def _validate_refs(db: Session, data: PaymentCreate | PaymentUpdate) -> tuple[Student, Group | None]:

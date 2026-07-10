@@ -105,17 +105,17 @@ def payments_report(
         query = query.filter(Payment.year == year)
     payments = query.all()
 
-    for p in payments:
-        p.status = compute_payment_status(p.amount, p.paid_amount, p.due_date)
-    db.commit()
+    # compute effective status for display only — GET must not write to the DB
+    effective = {p.id: compute_payment_status(p.amount, p.paid_amount, p.due_date) for p in payments}
     if status:
-        payments = [p for p in payments if p.status == status]
+        payments = [p for p in payments if effective[p.id] == status]
 
     summary = {"paid": 0, "unpaid": 0, "partial": 0, "overdue": 0,
                "total_amount": 0.0, "total_paid": 0.0, "total_outstanding": 0.0}
     items = []
     for p in payments:
-        summary[p.status] = summary.get(p.status, 0) + 1
+        p_status = effective[p.id]
+        summary[p_status] = summary.get(p_status, 0) + 1
         summary["total_amount"] += float(p.amount)
         summary["total_paid"] += float(p.paid_amount)
         items.append({
@@ -124,7 +124,7 @@ def payments_report(
             "group_name": p.group.name if p.group else "",
             "month": p.month, "year": p.year,
             "amount": float(p.amount), "paid_amount": float(p.paid_amount),
-            "status": p.status,
+            "status": p_status,
             "due_date": p.due_date.isoformat() if p.due_date else None,
             "paid_date": p.paid_date.isoformat() if p.paid_date else None,
         })

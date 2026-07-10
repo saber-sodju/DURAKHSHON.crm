@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models import User, Role, Student, Teacher, Parent, Group
@@ -9,6 +10,27 @@ from app.models import User, Role, Student, Teacher, Parent, Group
 bearer_scheme = HTTPBearer(auto_error=False)
 
 STAFF_ROLES = (Role.DIRECTOR.value, Role.ADMIN.value)
+
+
+def verify_same_origin(request: Request) -> None:
+    """CSRF defence for cookie-authenticated endpoints (refresh/logout): the
+    Origin (or Referer) must match an allowed frontend origin. Browsers always
+    send Origin on cross-site POSTs, so a forged request from another site is
+    rejected before the refresh cookie is honoured."""
+    allowed = set(settings.cors_origins_list)
+    if not allowed:
+        return  # no allow-list configured (e.g. some dev setups) — skip
+    origin = request.headers.get("origin")
+    if origin is None:
+        referer = request.headers.get("referer", "")
+        if referer:
+            from urllib.parse import urlparse
+            p = urlparse(referer)
+            origin = f"{p.scheme}://{p.netloc}"
+    if origin is None:
+        return  # same-origin requests from some clients omit Origin entirely
+    if origin not in allowed:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cross-origin request rejected")
 
 
 def get_current_user(

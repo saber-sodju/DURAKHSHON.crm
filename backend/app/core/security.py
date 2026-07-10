@@ -1,4 +1,6 @@
+import hashlib
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -23,7 +25,13 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def _create_token(subject: str, token_type: str, expires_delta: timedelta) -> str:
+def hash_jti(jti: str) -> str:
+    """Store only a hash of the refresh token's jti, never the token/jti itself."""
+    return hashlib.sha256(jti.encode()).hexdigest()
+
+
+def _create_token(subject: str, token_type: str, expires_delta: timedelta,
+                  extra: dict[str, Any] | None = None) -> str:
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
         "sub": subject,
@@ -31,6 +39,8 @@ def _create_token(subject: str, token_type: str, expires_delta: timedelta) -> st
         "iat": int(now.timestamp()),
         "exp": now + expires_delta,
     }
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -38,21 +48,33 @@ def create_access_token(user_id: int) -> str:
     return _create_token(str(user_id), "access", timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
 
 
-def create_refresh_token(user_id: int) -> str:
-    return _create_token(str(user_id), "refresh", timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
+def create_refresh_token(user_id: int, days: int) -> tuple[str, str, datetime]:
+    """Returns (token, jti, expires_at). The jti uniquely identifies this token so it
+    can be rotated/revoked via the user_sessions table."""
+    jti = uuid.uuid4().hex
+    expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+    token = _create_token(str(user_id), "refresh", timedelta(days=days), extra={"jti": jti})
+    return token, jti, expires_at
 
 
 def decode_token(token: str, expected_type: str) -> int | None:
+    payload = decode_token_payload(token, expected_type)
+    if payload is None:
+        return None
+    try:
+        return int(payload["sub"])
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def decode_token_payload(token: str, expected_type: str) -> dict[str, Any] | None:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
     if payload.get("type") != expected_type:
         return None
-    try:
-        return int(payload["sub"])
-    except (KeyError, ValueError, TypeError):
-        return None
+    return payload
 
 
 class LoginRateLimiter:

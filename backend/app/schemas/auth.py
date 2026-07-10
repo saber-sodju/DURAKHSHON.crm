@@ -6,6 +6,7 @@ from app.schemas.common import ORMModel
 class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=200)
+    remember_me: bool = False
 
 
 class TokenResponse(BaseModel):
