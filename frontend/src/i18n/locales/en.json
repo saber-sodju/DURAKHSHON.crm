@@ -104,7 +104,8 @@
     "password": "Password",
     "signIn": "Sign in",
     "usernameRequired": "Username is required",
-    "passwordRequired": "Password is required"
+    "passwordRequired": "Password is required",
+    "rememberMe": "Keep me signed in"
   },
   "ui": {
     "pagination": "Page {{page}} of {{pages}} · {{total}} records",
@@ -556,5 +557,35 @@
     "userCreated": "User created",
     "userDeactivated": "User deactivated",
     "markedAsRead": "Marked as read"
+  },
+  "sessions": {
+    "title": "My devices",
+    "subtitle": "Where your account is signed in",
+    "current": "This device",
+    "lastActive": "Last active",
+    "signedIn": "Signed in",
+    "expires": "Expires",
+    "logoutThis": "Log out",
+    "logoutAll": "Log out all other devices",
+    "none": "No active sessions",
+    "loggedOut": "Device logged out",
+    "loggedOutAll": "Other devices logged out"
+  },
+  "backups": {
+    "title": "Database backups",
+    "subtitle": "Automatic daily backups of all data",
+    "runNow": "Back up now",
+    "download": "Download",
+    "filename": "File",
+    "size": "Size",
+    "created": "Created",
+    "kind": "Type",
+    "none": "No backups yet",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "manual": "Manual",
+    "created_ok": "Backup created",
+    "hint": "Backups run automatically every night and are kept 7 days / 4 weeks / 6 months."
   }
 }

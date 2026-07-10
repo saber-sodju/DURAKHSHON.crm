@@ -11,8 +11,9 @@ import { useToast } from '../context/ToastContext'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Textarea, Field, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 type ParentForm = {
   first_name: string
@@ -111,48 +112,40 @@ export default function Parents() {
           <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
-        {isLoading ? <TableSkeleton cols={5} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('parents.noParentsFound')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={5} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>#</Th><Th>{t('students.columnName')}</Th><Th>{t('students.columnPhone')}</Th>
-                  <Th>{t('parents.columnEmail')}</Th><Th>{t('parents.columnChildren')}</Th>
-                  <Th className="text-right">{t('common.actions')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((parent, i) => (
-                  <tr key={parent.id} className="hover:bg-slate-50">
-                    <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td className="font-semibold text-slate-800">{parent.first_name} {parent.last_name}</Td>
-                    <Td>{parent.phone || '—'}</Td>
-                    <Td>{parent.email || '—'}</Td>
-                    <Td>
-                      <div className="flex flex-wrap gap-1">
-                        {parent.children.map((c) => (
-                          <span key={c.id} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                            {c.first_name} {c.last_name}
-                          </span>
-                        ))}
-                      </div>
-                    </Td>
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(parent)} title={t('common.edit')}>
-                          <Pencil size={15} className="text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(parent)} title={t('common.delete')}>
-                          <Trash2 size={15} className="text-red-500" />
-                        </Button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(parent) => parent.id}
+              emptyTitle={t('parents.noParentsFound')}
+              columns={[
+                { key: 'name', header: t('students.columnName'), primary: true,
+                  cell: (parent) => `${parent.first_name} ${parent.last_name}` },
+                { key: 'phone', header: t('students.columnPhone'), cell: (parent) => parent.phone || '—' },
+                { key: 'email', header: t('parents.columnEmail'), cell: (parent) => parent.email || '—' },
+                { key: 'children', header: t('parents.columnChildren'),
+                  cell: (parent) => (
+                    <div className="flex flex-wrap justify-end gap-1 sm:justify-start">
+                      {parent.children.map((c) => (
+                        <span key={c.id} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                          {c.first_name} {c.last_name}
+                        </span>
+                      ))}
+                    </div>
+                  ) },
+                { key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (parent) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(parent)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(parent)} title={t('common.delete')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) },
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

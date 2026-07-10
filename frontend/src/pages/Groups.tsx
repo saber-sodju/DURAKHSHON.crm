@@ -15,8 +15,9 @@ import { formatMoney, formatTime } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 type GroupForm = {
   name: string
@@ -177,54 +178,43 @@ export default function Groups() {
           <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
-        {isLoading ? <TableSkeleton cols={7} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('groups.noGroupsFound')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={7} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>#</Th><Th>{t('groups.columnGroup')}</Th><Th>{t('groups.columnCourse')}</Th>
-                  <Th>{t('groups.columnTeacher')}</Th><Th>{t('groups.columnStudents')}</Th>
-                  <Th>{t('groups.columnSchedule')}</Th><Th>{t('groups.columnPrice')}</Th><Th>{t('common.status')}</Th>
-                  {isStaff && <Th className="text-right">{t('common.actions')}</Th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((group, i) => (
-                  <tr key={group.id} className="hover:bg-slate-50">
-                    <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td>
-                      <Link to={`/groups/${group.id}`} className="font-semibold text-blue-600 hover:underline">
-                        {group.name}
-                      </Link>
-                    </Td>
-                    <Td>{group.course_name}</Td>
-                    <Td>{personName(group.teacher)}</Td>
-                    <Td>
-                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-50 px-1.5 text-xs font-bold text-blue-700">
-                        {group.students.length}
-                      </span>
-                    </Td>
-                    <Td className="text-slate-500">{scheduleLabel(group)}</Td>
-                    <Td>{formatMoney(group.price_per_month)}</Td>
-                    <Td><Badge value={group.status} /></Td>
-                    {isStaff && (
-                      <Td className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(group)} title={t('common.edit')}>
-                            <Pencil size={15} className="text-blue-600" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(group)} title={t('common.deactivate')}>
-                            <Trash2 size={15} className="text-red-500" />
-                          </Button>
-                        </div>
-                      </Td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(group) => group.id}
+              emptyTitle={t('groups.noGroupsFound')}
+              columns={[
+                { key: 'name', header: t('groups.columnGroup'), primary: true,
+                  cell: (group) => (
+                    <Link to={`/groups/${group.id}`} className="font-semibold text-blue-600 hover:underline">
+                      {group.name}
+                    </Link>
+                  ) },
+                { key: 'course', header: t('groups.columnCourse'), cell: (group) => group.course_name },
+                { key: 'teacher', header: t('groups.columnTeacher'), cell: (group) => personName(group.teacher) },
+                { key: 'students', header: t('groups.columnStudents'),
+                  cell: (group) => (
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-50 px-1.5 text-xs font-bold text-blue-700">
+                      {group.students.length}
+                    </span>
+                  ) },
+                { key: 'schedule', header: t('groups.columnSchedule'), cell: (group) => scheduleLabel(group) },
+                { key: 'price', header: t('groups.columnPrice'), cell: (group) => formatMoney(group.price_per_month) },
+                { key: 'status', header: t('common.status'), cell: (group) => <Badge value={group.status} /> },
+                ...(isStaff ? [{ key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (group: Group) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(group)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(group)} title={t('common.deactivate')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) }] : []),
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

@@ -5,7 +5,7 @@ import type { Me } from '../lib/types'
 interface AuthState {
   user: Me | null
   loading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('auth:expired', onExpired)
   }, [])
 
-  async function login(username: string, password: string) {
-    const res = await api.post('/auth/login', { username, password })
+  async function login(username: string, password: string, rememberMe = false) {
+    const res = await api.post('/auth/login', { username, password, remember_me: rememberMe })
     setAccessToken(res.data.access_token)
     const me = await api.get<Me>('/auth/me')
     setUser(me.data)

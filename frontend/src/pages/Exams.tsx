@@ -9,8 +9,9 @@ import { formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Textarea, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  EmptyState, TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 interface ExamDraft {
   title: string
@@ -197,44 +198,37 @@ export default function Exams() {
           </Select>
         </div>
 
-        {isLoading ? <TableSkeleton cols={7} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('exams.noExamsYet')} hint={t('exams.noExamsHint')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={7} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('exams.columnTitle')}</Th><Th>{t('exams.columnGroup')}</Th><Th>{t('exams.columnTeacher')}</Th><Th>{t('exams.columnDate')}</Th>
-                  <Th>{t('exams.columnMaxScore')}</Th><Th>{t('exams.columnStatus')}</Th><Th>{t('exams.columnGrades')}</Th><Th className="text-right">{t('common.actions')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold text-slate-800">{exam.title}</Td>
-                    <Td>{exam.group_name}</Td>
-                    <Td>{exam.teacher_name ?? '—'}</Td>
-                    <Td>{formatDate(exam.exam_date)}</Td>
-                    <Td>{exam.max_score}</Td>
-                    <Td><Badge value={exam.status} /></Td>
-                    <Td>{exam.grades_count}</Td>
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setGrading(exam)} title={t('exams.enterGrades')}>
-                          <GraduationCap size={16} className="text-emerald-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} title={t('common.edit')}>
-                          <Pencil size={15} className="text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(exam)} title={t('common.delete')}>
-                          <Trash2 size={15} className="text-red-500" />
-                        </Button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(exam) => exam.id}
+              emptyTitle={t('exams.noExamsYet')}
+              emptyHint={t('exams.noExamsHint')}
+              columns={[
+                { key: 'title', header: t('exams.columnTitle'), primary: true, cell: (exam) => exam.title },
+                { key: 'group', header: t('exams.columnGroup'), cell: (exam) => exam.group_name },
+                { key: 'teacher', header: t('exams.columnTeacher'), cell: (exam) => exam.teacher_name ?? '—' },
+                { key: 'date', header: t('exams.columnDate'), cell: (exam) => formatDate(exam.exam_date) },
+                { key: 'max', header: t('exams.columnMaxScore'), cell: (exam) => exam.max_score },
+                { key: 'status', header: t('exams.columnStatus'), cell: (exam) => <Badge value={exam.status} /> },
+                { key: 'grades', header: t('exams.columnGrades'), cell: (exam) => exam.grades_count },
+                { key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (exam) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => setGrading(exam)} title={t('exams.enterGrades')}>
+                        <GraduationCap size={16} className="text-emerald-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(exam)} title={t('common.delete')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) },
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

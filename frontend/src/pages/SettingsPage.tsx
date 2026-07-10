@@ -9,6 +9,8 @@ import { useToast } from '../context/ToastContext'
 import { SUPPORTED_LANGUAGES } from '../i18n'
 import PageHeader from '../components/PageHeader'
 import { Button, Card, Input, Field, Badge, Select } from '../components/ui'
+import SessionsPanel from '../components/SessionsPanel'
+import BackupsPanel from '../components/BackupsPanel'
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -80,6 +82,11 @@ export default function SettingsPage() {
             <Button type="submit" loading={formState.isSubmitting}>{t('settings.updatePassword')}</Button>
           </form>
         </Card>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <SessionsPanel />
+        {user?.role === 'director' && <BackupsPanel />}
       </div>
     </>
   )

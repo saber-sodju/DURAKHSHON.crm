@@ -15,6 +15,8 @@ export default function Login() {
   const { t } = useTranslation()
   const [error, setError] = useState('')
 
+  const [rememberMe, setRememberMe] = useState(true)
+
   const schema = z.object({
     username: z.string().min(1, t('login.usernameRequired')),
     password: z.string().min(1, t('login.passwordRequired')),
@@ -27,7 +29,7 @@ export default function Login() {
   async function onSubmit(data: FormData) {
     setError('')
     try {
-      await login(data.username, data.password)
+      await login(data.username, data.password, rememberMe)
       navigate('/')
     } catch (e) {
       setError(apiErrorMessage(e))
@@ -59,6 +61,11 @@ export default function Login() {
           <Field label={t('login.password')} error={formState.errors.password?.message} required>
             <Input type="password" placeholder="••••••••" autoComplete="current-password" {...register('password')} />
           </Field>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
+                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+            {t('login.rememberMe')}
+          </label>
           <Button type="submit" className="w-full" loading={formState.isSubmitting}>
             {t('login.signIn')}
           </Button>

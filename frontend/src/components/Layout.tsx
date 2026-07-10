@@ -178,7 +178,7 @@ export default function Layout() {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

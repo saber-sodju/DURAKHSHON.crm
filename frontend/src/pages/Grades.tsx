@@ -6,7 +6,8 @@ import type { Page, Grade, Student, Tag } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 import { formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
-import { Card, Select, TableShell, Th, Td, EmptyState, TableSkeleton, Pagination } from '../components/ui'
+import { Card, Select, TableSkeleton, Pagination } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 export default function Grades() {
   const { t } = useTranslation()
@@ -51,32 +52,25 @@ export default function Grades() {
             <span className="text-xs text-slate-400">{t('grades.groupViewHint')}</span>
           </div>
         )}
-        {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('grades.noGradesYet')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('grades.columnStudent')}</Th><Th>{t('grades.columnExam')}</Th><Th>{t('grades.columnGroup')}</Th><Th>{t('grades.columnDate')}</Th>
-                  <Th>{t('grades.columnScore')}</Th><Th>%</Th><Th>{t('grades.columnGrade')}</Th><Th>{t('grades.columnComment')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((g) => (
-                  <tr key={g.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold text-slate-800">{g.student_name}</Td>
-                    <Td>{g.exam_title}</Td>
-                    <Td>{g.group_name ?? '—'}</Td>
-                    <Td>{formatDate(g.exam_date)}</Td>
-                    <Td>{g.score}{g.max_score ? ` / ${g.max_score}` : ''}</Td>
-                    <Td>{g.percentage}%</Td>
-                    <Td><span className="font-bold">{g.grade_label || '—'}</span></Td>
-                    <Td className="text-slate-400">{g.comment || '—'}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(g) => g.id}
+              emptyTitle={t('grades.noGradesYet')}
+              columns={[
+                { key: 'student', header: t('grades.columnStudent'), primary: true, cell: (g) => g.student_name },
+                { key: 'exam', header: t('grades.columnExam'), cell: (g) => g.exam_title },
+                { key: 'group', header: t('grades.columnGroup'), cell: (g) => g.group_name ?? '—' },
+                { key: 'date', header: t('grades.columnDate'), cell: (g) => formatDate(g.exam_date) },
+                { key: 'score', header: t('grades.columnScore'),
+                  cell: (g) => `${g.score}${g.max_score ? ` / ${g.max_score}` : ''}` },
+                { key: 'pct', header: '%', cell: (g) => `${g.percentage}%` },
+                { key: 'grade', header: t('grades.columnGrade'),
+                  cell: (g) => <span className="font-bold">{g.grade_label || '—'}</span> },
+                { key: 'comment', header: t('grades.columnComment'), cell: (g) => g.comment || '—' },
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

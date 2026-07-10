@@ -11,8 +11,9 @@ import { formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Badge, Card, Modal, Field,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 const STATUSES = ['present', 'absent', 'late', 'excused'] as const
 
@@ -205,31 +206,23 @@ export default function Attendance() {
           </span>
         </div>
 
-        {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('attendance.noRecords')} hint={t('attendance.noRecordsHint')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('attendance.columnStudent')}</Th><Th>{t('attendance.columnGroup')}</Th>
-                  <Th>{t('attendance.columnTeacher')}</Th><Th>{t('attendance.columnDate')}</Th>
-                  <Th>{t('attendance.columnStatus')}</Th><Th>{t('attendance.columnNote')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold text-slate-800">{r.student_name}</Td>
-                    <Td>{r.group_name}</Td>
-                    <Td>{r.teacher_name ?? '—'}</Td>
-                    <Td>{formatDate(r.date)}</Td>
-                    <Td><Badge value={r.status} /></Td>
-                    <Td className="text-slate-400">{r.note || '—'}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(r) => r.id}
+              emptyTitle={t('attendance.noRecords')}
+              emptyHint={t('attendance.noRecordsHint')}
+              columns={[
+                { key: 'student', header: t('attendance.columnStudent'), primary: true,
+                  cell: (r) => r.student_name },
+                { key: 'group', header: t('attendance.columnGroup'), cell: (r) => r.group_name },
+                { key: 'teacher', header: t('attendance.columnTeacher'), cell: (r) => r.teacher_name ?? '—' },
+                { key: 'date', header: t('attendance.columnDate'), cell: (r) => formatDate(r.date) },
+                { key: 'status', header: t('attendance.columnStatus'), cell: (r) => <Badge value={r.status} /> },
+                { key: 'note', header: t('attendance.columnNote'), cell: (r) => r.note || '—' },
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

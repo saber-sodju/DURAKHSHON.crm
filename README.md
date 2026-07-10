@@ -50,6 +50,71 @@ Notes:
 
 ---
 
+## Environment variables (backend)
+
+| Variable | Example (production) | Notes |
+|----------|----------------------|-------|
+| `ENVIRONMENT` | `production` | in production the app refuses to start if the config is unsafe |
+| `SECRET_KEY` | 64-char random | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | Railway reference expression, see above |
+| `CORS_ORIGINS` | `https://<frontend-domain>` | no `*`, no localhost in production |
+| `COOKIE_SECURE` | `true` | required in production (HTTPS) |
+| `COOKIE_SAMESITE` | `none` | `none` when frontend/backend are different origins; else `lax` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | short-lived access token |
+| `REFRESH_TOKEN_DAYS` | `1` | session length without "remember me" |
+| `REFRESH_TOKEN_REMEMBER_DAYS` | `14` | session length with "remember me" |
+| `SEED_DEMO` | `false` | **must be false in production**; gates the demo seed |
+| `BACKUP_ENABLED` | `true` | daily in-process backup scheduler |
+| `BACKUP_DIR` | `/data/backups` | point at a mounted Railway **volume** |
+
+The frontend build takes `VITE_API_BASE_URL` (absolute backend URL) as a build arg.
+
+### Production startup guard
+In `ENVIRONMENT=production` the backend **will not boot** if `SECRET_KEY` is weak,
+`COOKIE_SECURE` is false, `CORS_ORIGINS` contains `*` or localhost, or `SEED_DEMO` is
+true. This prevents shipping an unsafe configuration by accident.
+
+---
+
+## Demo deployment vs production deployment
+
+**Demo** (what you want for a sandbox): `ENVIRONMENT=development` or a non-production
+env, `SEED_DEMO=true`, then `python -m app.seed` creates demo users
+(director / admin / teacher / teacher2 / parent / student, password from
+`SEED_DEMO_PASSWORD`).
+
+**Production** (real learning center):
+
+1. Set the production env vars above (`SEED_DEMO=false`, strong `SECRET_KEY`, HTTPS
+   cookies, real `CORS_ORIGINS`).
+2. Apply migrations: `alembic upgrade head` (the backend Docker image does this on start).
+3. **Create the first real director:**
+   ```bash
+   python -m app.commands.create_director
+   # prompts for username, email, password, first/last name
+   ```
+4. **Remove demo data** if the database was ever seeded (take a backup first — see
+   BACKUP_AND_RESTORE.md):
+   ```bash
+   python -m app.commands.purge_demo_data        # dry run: shows what would be deleted
+   python -m app.commands.purge_demo_data --yes  # actually delete
+   ```
+   It only removes records matching the seed's demo markers; real data is left intact.
+5. Attach a backup volume and enable backups (see BACKUP_AND_RESTORE.md).
+
+See **BACKUP_AND_RESTORE.md** for backups/restore and **MOBILE_QA.md** for the mobile
+test checklist.
+
+### Long login sessions
+Access tokens are short (30 min) and refresh automatically from an httpOnly refresh
+cookie, so users are not logged out mid-session. The login screen has a
+**"Keep me signed in"** checkbox: off → session lasts ~1 day, on → ~14 days. Refresh
+tokens rotate on every use (a stolen/old token can't be replayed), and
+**Settings → My devices** lists active sessions with "log out this device" and
+"log out all other devices". Changing the password logs out every session.
+
+---
+
 ## Quick start (Docker)
 
 ```bash

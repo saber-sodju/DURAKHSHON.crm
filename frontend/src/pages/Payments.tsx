@@ -12,8 +12,9 @@ import { formatDate, formatMoney } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Textarea, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 interface PaymentDraft {
   student_id: string
@@ -167,46 +168,35 @@ export default function Payments() {
           {isStaff && <Button type="submit" variant="secondary"><Search size={15} /></Button>}
         </form>
 
-        {isLoading ? <TableSkeleton cols={8} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('payments.noPaymentsFound')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={8} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>#</Th><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnGroup')}</Th>
-                  <Th>{t('payments.columnMonthYear')}</Th><Th>{t('payments.columnAmount')}</Th>
-                  <Th>{t('payments.columnPaid')}</Th><Th>{t('common.status')}</Th><Th>{t('payments.columnPaidOn')}</Th>
-                  {isStaff && <Th className="text-right">{t('common.actions')}</Th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((p, i) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td className="font-semibold text-slate-800">{p.student_name}</Td>
-                    <Td>{p.group_name ?? '—'}</Td>
-                    <Td>{monthNames[p.month - 1]} {p.year}</Td>
-                    <Td>{formatMoney(p.amount)}</Td>
-                    <Td>{formatMoney(p.paid_amount)}</Td>
-                    <Td><Badge value={p.status} /></Td>
-                    <Td>{formatDate(p.paid_date)}</Td>
-                    {isStaff && (
-                      <Td className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title={t('common.edit')}>
-                            <Pencil size={15} className="text-blue-600" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} title={t('common.delete')}>
-                            <Trash2 size={15} className="text-red-500" />
-                          </Button>
-                        </div>
-                      </Td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(p) => p.id}
+              emptyTitle={t('payments.noPaymentsFound')}
+              columns={[
+                { key: 'student', header: t('payments.columnStudent'), primary: true,
+                  cell: (p) => p.student_name },
+                { key: 'group', header: t('payments.columnGroup'), cell: (p) => p.group_name ?? '—' },
+                { key: 'period', header: t('payments.columnMonthYear'),
+                  cell: (p) => `${monthNames[p.month - 1]} ${p.year}` },
+                { key: 'amount', header: t('payments.columnAmount'), cell: (p) => formatMoney(p.amount) },
+                { key: 'paid', header: t('payments.columnPaid'), cell: (p) => formatMoney(p.paid_amount) },
+                { key: 'status', header: t('common.status'), cell: (p) => <Badge value={p.status} /> },
+                { key: 'paidOn', header: t('payments.columnPaidOn'), cell: (p) => formatDate(p.paid_date) },
+                ...(isStaff ? [{ key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (p: Payment) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(p)} title={t('common.delete')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) }] : []),
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

@@ -189,6 +189,24 @@ export interface Notification {
   created_at: string
 }
 
+export interface DeviceSession {
+  id: number
+  device_name: string
+  user_agent: string
+  ip_address: string
+  created_at: string
+  last_seen_at: string
+  expires_at: string
+  is_current: boolean
+}
+
+export interface Backup {
+  filename: string
+  size_bytes: number
+  created_at: string
+  kind: string
+}
+
 export function personName(tag: Tag | null | undefined): string {
   if (!tag) return '—'
   return tag.name ?? `${tag.first_name ?? ''} ${tag.last_name ?? ''}`.trim()

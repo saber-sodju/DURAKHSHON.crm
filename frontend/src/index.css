@@ -14,6 +14,19 @@ body {
   background-color: var(--color-slate-100);
   color: var(--color-slate-800);
   -webkit-font-smoothing: antialiased;
+  /* never let the whole page scroll sideways on a phone */
+  overflow-x: hidden;
+}
+
+/* comfortable touch targets on phones: inputs/selects/buttons at least 44px tall */
+@media (max-width: 640px) {
+  input, select, textarea, button {
+    min-height: 44px;
+  }
+  /* date/time native pickers need room for the value + control */
+  input[type="date"], input[type="time"], input[type="number"] {
+    font-size: 16px; /* stops iOS Safari from zooming in on focus */
+  }
 }
 
 ::-webkit-scrollbar {

@@ -12,8 +12,9 @@ import { useToast } from '../context/ToastContext'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Textarea, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 type TeacherForm = {
   first_name: string
@@ -125,49 +126,41 @@ export default function Teachers() {
           <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
-        {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('teachers.noTeachersFound')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>#</Th><Th>{t('students.columnName')}</Th><Th>{t('students.columnPhone')}</Th>
-                  <Th>{t('teachers.columnSubject')}</Th><Th>{t('teachers.columnGroups')}</Th><Th>{t('common.status')}</Th>
-                  <Th className="text-right">{t('common.actions')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((teacher, i) => (
-                  <tr key={teacher.id} className="hover:bg-slate-50">
-                    <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td className="font-semibold text-slate-800">{teacher.first_name} {teacher.last_name}</Td>
-                    <Td>{teacher.phone || '—'}</Td>
-                    <Td>{teacher.subject || '—'}</Td>
-                    <Td>
-                      <div className="flex flex-wrap gap-1">
-                        {teacher.groups.map((g) => (
-                          <span key={g.id} className="rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-semibold text-cyan-700">
-                            {g.name}
-                          </span>
-                        ))}
-                      </div>
-                    </Td>
-                    <Td><Badge value={teacher.status} /></Td>
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(teacher)} title={t('common.edit')}>
-                          <Pencil size={15} className="text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(teacher)} title={t('common.deactivate')}>
-                          <Trash2 size={15} className="text-red-500" />
-                        </Button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(teacher) => teacher.id}
+              emptyTitle={t('teachers.noTeachersFound')}
+              columns={[
+                { key: 'name', header: t('students.columnName'), primary: true,
+                  cell: (teacher) => `${teacher.first_name} ${teacher.last_name}` },
+                { key: 'phone', header: t('students.columnPhone'), cell: (teacher) => teacher.phone || '—' },
+                { key: 'subject', header: t('teachers.columnSubject'), cell: (teacher) => teacher.subject || '—' },
+                { key: 'groups', header: t('teachers.columnGroups'),
+                  cell: (teacher) => (
+                    <div className="flex flex-wrap justify-end gap-1 sm:justify-start">
+                      {teacher.groups.map((g) => (
+                        <span key={g.id} className="rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-semibold text-cyan-700">
+                          {g.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) },
+                { key: 'status', header: t('common.status'), cell: (teacher) => <Badge value={teacher.status} /> },
+                { key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (teacher) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(teacher)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(teacher)} title={t('common.deactivate')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) },
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}

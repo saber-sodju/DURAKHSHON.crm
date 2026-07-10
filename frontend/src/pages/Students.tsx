@@ -13,8 +13,9 @@ import { useToast } from '../context/ToastContext'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Textarea, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableSkeleton, Pagination,
 } from '../components/ui'
+import { ResponsiveTable } from '../components/ResponsiveTable'
 
 type StudentForm = {
   first_name: string
@@ -208,55 +209,47 @@ export default function Students() {
           <Button type="submit" variant="secondary"><Search size={15} /> {t('common.search')}</Button>
         </form>
 
-        {isLoading ? <TableSkeleton cols={6} /> : !data || data.items.length === 0 ? (
-          <EmptyState title={t('students.noStudentsFound')} hint={t('students.noStudentsHint')} />
-        ) : (
+        {isLoading ? <TableSkeleton cols={6} /> : !data ? null : (
           <>
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>#</Th><Th>{t('students.columnName')}</Th><Th>{t('students.columnPhone')}</Th>
-                  <Th>{t('students.columnParent')}</Th><Th>{t('students.columnGroups')}</Th><Th>{t('common.status')}</Th>
-                  {isStaff && <Th className="text-right">{t('common.actions')}</Th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.items.map((s, i) => (
-                  <tr key={s.id} className="hover:bg-slate-50">
-                    <Td className="text-slate-400">{(data.page - 1) * data.page_size + i + 1}</Td>
-                    <Td>
-                      <Link to={`/students/${s.id}`} className="font-semibold text-slate-800 hover:text-blue-600">
-                        {s.first_name} {s.last_name}
-                      </Link>
-                    </Td>
-                    <Td>{s.phone || '—'}</Td>
-                    <Td>{s.parents.length ? s.parents.map((p) => `${p.first_name} ${p.last_name}`).join(', ') : '—'}</Td>
-                    <Td>
-                      <div className="flex flex-wrap gap-1">
-                        {s.groups.map((g) => (
-                          <span key={g.id} className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                            {g.name}
-                          </span>
-                        ))}
-                      </div>
-                    </Td>
-                    <Td><Badge value={s.status} /></Td>
-                    {isStaff && (
-                      <Td className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title={t('common.edit')}>
-                            <Pencil size={15} className="text-blue-600" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(s)} title={t('common.deactivate')}>
-                            <Trash2 size={15} className="text-red-500" />
-                          </Button>
-                        </div>
-                      </Td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <ResponsiveTable
+              rows={data.items}
+              rowKey={(s) => s.id}
+              emptyTitle={t('students.noStudentsFound')}
+              emptyHint={t('students.noStudentsHint')}
+              columns={[
+                { key: 'name', header: t('students.columnName'), primary: true,
+                  cell: (s) => (
+                    <Link to={`/students/${s.id}`} className="font-semibold text-slate-800 hover:text-blue-600">
+                      {s.first_name} {s.last_name}
+                    </Link>
+                  ) },
+                { key: 'phone', header: t('students.columnPhone'), cell: (s) => s.phone || '—' },
+                { key: 'parent', header: t('students.columnParent'),
+                  cell: (s) => (s.parents.length ? s.parents.map((p) => `${p.first_name} ${p.last_name}`).join(', ') : '—') },
+                { key: 'groups', header: t('students.columnGroups'),
+                  cell: (s) => (
+                    <div className="flex flex-wrap justify-end gap-1 sm:justify-start">
+                      {s.groups.map((g) => (
+                        <span key={g.id} className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                          {g.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) },
+                { key: 'status', header: t('common.status'), cell: (s) => <Badge value={s.status} /> },
+                ...(isStaff ? [{ key: 'actions', header: t('common.actions'), actions: true,
+                  cell: (s: Student) => (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title={t('common.edit')}>
+                        <Pencil size={15} className="text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleting(s)} title={t('common.deactivate')}>
+                        <Trash2 size={15} className="text-red-500" />
+                      </Button>
+                    </>
+                  ) }] : []),
+              ]}
+            />
             <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPage={setPage} />
           </>
         )}
