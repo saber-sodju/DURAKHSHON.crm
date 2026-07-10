@@ -129,10 +129,11 @@ export default function Layout() {
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-slate-900">
+          <aside className="absolute inset-y-0 left-0 flex w-[80%] max-w-xs flex-col bg-slate-900 pt-[env(safe-area-inset-top)]">
             <button onClick={() => setMobileOpen(false)}
-                    className="absolute right-3 top-4 text-slate-400 hover:text-white">
-              <X size={20} />
+                    aria-label={t('common.close')}
+                    className="absolute right-3 top-[calc(1rem+env(safe-area-inset-top))] flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white">
+              <X size={22} />
             </button>
             <SidebarContent role={user.role} onNavigate={() => setMobileOpen(false)} />
           </aside>
@@ -140,14 +141,18 @@ export default function Layout() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+        {/* pt safe-area keeps the toolbar clear of the phone status bar / notch */}
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-3 pt-[env(safe-area-inset-top)] sm:px-6"
+                style={{ height: 'calc(4rem + env(safe-area-inset-top))' }}>
           <button className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 lg:hidden"
-                  onClick={() => setMobileOpen(true)}>
-            <Menu size={18} />
+                  onClick={() => setMobileOpen(true)}
+                  aria-label={t('nav.dashboard')}>
+            <Menu size={20} />
           </button>
           <div className="hidden lg:block" />
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            <LanguageSwitcher />
+          <div className="flex items-center gap-1 sm:gap-3">
+            {/* language pill takes too much room on phones — it's also in Settings */}
+            <LanguageSwitcher className="hidden sm:block" />
             <button
               onClick={() => navigate('/notifications')}
               className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100"

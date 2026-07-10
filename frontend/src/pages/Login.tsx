@@ -41,7 +41,7 @@ export default function Login() {
   return (
     <div className="relative flex min-h-full items-center justify-center p-4"
          style={{ backgroundColor: '#031429' }}>
-      <LanguageSwitcher className="absolute right-4 top-4" />
+      <LanguageSwitcher className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))]" />
       <div className="w-full max-w-md">
         <div className="mb-4 flex flex-col items-center">
           <img src="/logo.webp" alt="DURAKHSHON Learning Center"
