@@ -15,6 +15,8 @@ class UserOut(ORMModel):
     role: str
     full_name: str
     is_active: bool
+    must_change_password: bool = False
+    last_login_at: datetime | None = None
     created_at: datetime
 
 

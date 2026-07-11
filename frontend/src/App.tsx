@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './context/AuthContext'
 import type { RoleName } from './lib/types'
@@ -9,6 +9,7 @@ import Students from './pages/Students'
 import StudentDetails from './pages/StudentDetails'
 import Teachers from './pages/Teachers'
 import Parents from './pages/Parents'
+import ParentDetails from './pages/ParentDetails'
 import Groups from './pages/Groups'
 import GroupDetails from './pages/GroupDetails'
 import SchedulePage from './pages/SchedulePage'
@@ -31,9 +32,12 @@ function FullScreenSpinner() {
 
 function Protected({ roles, children }: { roles?: RoleName[]; children: ReactNode }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <FullScreenSpinner />
   if (!user) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
+  // a freshly generated (or reset) password must be changed before anything else
+  if (user.must_change_password && location.pathname !== '/settings') return <Navigate to="/settings" replace />
   return <>{children}</>
 }
 
@@ -49,6 +53,7 @@ export default function App() {
         <Route path="/students/:id" element={<StudentDetails />} />
         <Route path="/teachers" element={<Protected roles={STAFF}><Teachers /></Protected>} />
         <Route path="/parents" element={<Protected roles={STAFF}><Parents /></Protected>} />
+        <Route path="/parents/:id" element={<Protected roles={STAFF}><ParentDetails /></Protected>} />
         <Route path="/groups" element={<Protected roles={[...STAFF, 'teacher']}><Groups /></Protected>} />
         <Route path="/groups/:id" element={<GroupDetails />} />
         <Route path="/schedule" element={<SchedulePage />} />

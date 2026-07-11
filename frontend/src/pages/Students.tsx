@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Search, UserPlus } from 'lucide-react'
-import { api, apiErrorMessage } from '../lib/api'
-import type { Page, Student, Group, Parent } from '../lib/types'
+import { api, apiErrorMessage, getDuplicateParents } from '../lib/api'
+import type { Page, Student, Group, StudentCreateResult, GeneratedAccount } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import PageHeader from '../components/PageHeader'
@@ -16,6 +16,8 @@ import {
   TableSkeleton, Pagination,
 } from '../components/ui'
 import { ResponsiveTable } from '../components/ResponsiveTable'
+import ParentPicker, { type GuardianEntry } from '../components/ParentPicker'
+import CredentialsModal from '../components/CredentialsModal'
 
 type StudentForm = {
   first_name: string
@@ -66,6 +68,7 @@ export default function Students() {
   const { user } = useAuth()
   const { toast } = useToast()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const isStaff = user?.role === 'director' || user?.role === 'admin'
@@ -78,8 +81,10 @@ export default function Students() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Student | null>(null)
   const [deleting, setDeleting] = useState<Student | null>(null)
-  const [parentIds, setParentIds] = useState<number[]>([])
   const [groupIds, setGroupIds] = useState<number[]>([])
+  const [guardianEntries, setGuardianEntries] = useState<GuardianEntry[]>([])
+  const [createStudentAccount, setCreateStudentAccount] = useState(false)
+  const [credentialsResult, setCredentialsResult] = useState<StudentCreateResult | null>(null)
 
   const studentSchema = z.object({
     first_name: z.string().min(1, t('settings.required')),
@@ -122,31 +127,68 @@ export default function Students() {
     queryKey: ['groups', 'all'],
     queryFn: async () => (await api.get<Page<Group>>('/groups', { params: { page_size: 100 } })).data,
   })
-  const { data: parents } = useQuery({
-    queryKey: ['parents', 'all'],
-    queryFn: async () => (await api.get<Page<Parent>>('/parents', { params: { page_size: 100 } })).data,
-    enabled: isStaff,
-  })
 
   const saveMutation = useMutation({
     mutationFn: async (form: StudentForm) => {
-      const payload = {
+      const base = {
         ...form,
         date_of_birth: form.date_of_birth || null,
         enrollment_date: form.enrollment_date || null,
-        parent_ids: parentIds,
-        group_ids: groupIds,
       }
-      if (editing) return (await api.put(`/students/${editing.id}`, payload)).data
-      return (await api.post('/students', payload)).data
+      if (editing) {
+        return { kind: 'update' as const, data: (await api.put(`/students/${editing.id}`, {
+          ...base, group_ids: groupIds,
+        })).data as Student }
+      }
+      const existing_parent_links = guardianEntries
+        .filter((e) => e.kind === 'existing')
+        .map((e) => ({ parent_id: e.existingParent!.id, relation: e.relation }))
+      const new_parents = guardianEntries
+        .filter((e) => e.kind === 'new')
+        .map((e) => ({
+          first_name: e.newData!.first_name, last_name: e.newData!.last_name,
+          phone: e.newData!.phone, email: e.newData!.email, notes: e.newData!.notes,
+          relation: e.relation, create_user_account: e.newData!.create_user_account,
+          allow_duplicate: !!e.allowDuplicate,
+        }))
+      const result = (await api.post('/students', {
+        ...base, group_ids: groupIds,
+        existing_parent_links, new_parents,
+        create_student_user_account: createStudentAccount,
+      })).data as StudentCreateResult
+      return { kind: 'create' as const, data: result }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      toast(editing ? t('toasts.studentUpdated') : t('toasts.studentCreated'))
+      queryClient.invalidateQueries({ queryKey: ['parents'] })
       setModalOpen(false)
+      if (result.kind === 'update') {
+        toast(t('toasts.studentUpdated'))
+      } else {
+        toast(t('toasts.studentCreated'))
+        setCredentialsResult(result.data)
+      }
     },
-    onError: (e) => toast(apiErrorMessage(e), 'error'),
+    onError: (e) => {
+      const duplicates = getDuplicateParents(e)
+      if (duplicates && duplicates.length > 0) {
+        const newEntries = guardianEntries.filter((entry) => entry.kind === 'new')
+        setGuardianEntries((prev) => {
+          const updated = [...prev]
+          for (const dup of duplicates) {
+            const target = newEntries[dup.index]
+            if (!target) continue
+            const idx = updated.findIndex((entry) => entry.key === target.key)
+            if (idx >= 0) updated[idx] = { ...updated[idx], duplicateWarning: dup }
+          }
+          return updated
+        })
+        toast(t('studentForm.duplicatesFoundToast'), 'error')
+        return
+      }
+      toast(apiErrorMessage(e), 'error')
+    },
   })
 
   const deleteMutation = useMutation({
@@ -161,16 +203,18 @@ export default function Students() {
 
   function openCreate() {
     setEditing(null)
-    setParentIds([])
     setGroupIds([])
+    setGuardianEntries([])
+    setCreateStudentAccount(false)
     reset(emptyForm)
     setModalOpen(true)
   }
 
   function openEdit(student: Student) {
     setEditing(student)
-    setParentIds(student.parents.map((p) => p.id))
     setGroupIds(student.groups.map((g) => g.id))
+    setGuardianEntries([])
+    setCreateStudentAccount(false)
     reset({
       first_name: student.first_name, last_name: student.last_name,
       phone: student.phone, email: student.email,
@@ -180,6 +224,8 @@ export default function Students() {
     })
     setModalOpen(true)
   }
+
+  const accounts: GeneratedAccount[] = credentialsResult?.accounts ?? []
 
   return (
     <>
@@ -263,47 +309,78 @@ export default function Students() {
                  <Button type="submit" form="student-form" loading={saveMutation.isPending}>{editing ? t('common.saveChanges') : t('students.createStudent')}</Button>
                </div>
              }>
-        <form id="student-form" onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
-              <Input {...register('first_name')} />
-            </Field>
-            <Field label={t('students.lastName')} required error={formState.errors.last_name?.message}>
-              <Input {...register('last_name')} />
-            </Field>
-            <Field label={t('students.phone')}><Input {...register('phone')} /></Field>
-            <Field label={t('students.email')} error={formState.errors.email?.message}><Input {...register('email')} /></Field>
-            <Field label={t('students.dateOfBirth')}><Input type="date" {...register('date_of_birth')} /></Field>
-            <Field label={t('students.gender')}>
-              <Select {...register('gender')}>
-                <option value="">{t('common.notSpecified')}</option>
-                <option value="male">{t('common.male')}</option>
-                <option value="female">{t('common.female')}</option>
-              </Select>
-            </Field>
-            <Field label={t('common.status')}>
-              <Select {...register('status')}>
-                <option value="active">{t('common.badge.active')}</option>
-                <option value="inactive">{t('common.badge.inactive')}</option>
-              </Select>
-            </Field>
-            <Field label={t('students.enrollmentDate')}><Input type="date" {...register('enrollment_date')} /></Field>
+        <form id="student-form" onSubmit={handleSubmit((f) => saveMutation.mutate(f))} className="space-y-6">
+          <div>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">{t('studentForm.sectionStudentInfo')}</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t('students.firstName')} required error={formState.errors.first_name?.message}>
+                <Input {...register('first_name')} />
+              </Field>
+              <Field label={t('students.lastName')} required error={formState.errors.last_name?.message}>
+                <Input {...register('last_name')} />
+              </Field>
+              <Field label={t('students.phone')}><Input {...register('phone')} /></Field>
+              <Field label={t('students.email')} error={formState.errors.email?.message}><Input {...register('email')} /></Field>
+              <Field label={t('students.dateOfBirth')}><Input type="date" {...register('date_of_birth')} /></Field>
+              <Field label={t('students.gender')}>
+                <Select {...register('gender')}>
+                  <option value="">{t('common.notSpecified')}</option>
+                  <option value="male">{t('common.male')}</option>
+                  <option value="female">{t('common.female')}</option>
+                </Select>
+              </Field>
+              <Field label={t('common.status')}>
+                <Select {...register('status')}>
+                  <option value="active">{t('common.badge.active')}</option>
+                  <option value="inactive">{t('common.badge.inactive')}</option>
+                </Select>
+              </Field>
+              <Field label={t('students.enrollmentDate')}><Input type="date" {...register('enrollment_date')} /></Field>
+            </div>
+            <div className="mt-4">
+              <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
+            </div>
           </div>
-          <Field label={t('students.parents')}>
-            <CheckboxList
-              options={(parents?.items ?? []).map((p) => ({ id: p.id, label: `${p.first_name} ${p.last_name}` }))}
-              selected={parentIds} onChange={setParentIds} empty={t('students.noParentsHint')}
-            />
-          </Field>
-          <Field label={t('students.groups')}>
+
+          {!editing && (
+            <div>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">{t('studentForm.sectionParents')}</h3>
+              <ParentPicker entries={guardianEntries} onChange={setGuardianEntries} />
+            </div>
+          )}
+
+          <div>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">{t('students.groups')}</h3>
             <CheckboxList
               options={(groups?.items ?? []).map((g) => ({ id: g.id, label: g.name }))}
               selected={groupIds} onChange={setGroupIds} empty={t('students.noGroupsHint')}
             />
-          </Field>
-          <Field label={t('common.notes')}><Textarea {...register('notes')} /></Field>
+          </div>
+
+          {!editing && (
+            <div>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">{t('studentForm.sectionAccounts')}</h3>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input type="checkbox" className="h-4 w-4 rounded border-slate-300"
+                       checked={createStudentAccount} onChange={(e) => setCreateStudentAccount(e.target.checked)} />
+                {t('studentForm.createStudentAccount')}
+              </label>
+            </div>
+          )}
         </form>
       </Modal>
+
+      <CredentialsModal
+        open={!!credentialsResult}
+        onClose={() => setCredentialsResult(null)}
+        accounts={accounts}
+        onCreateAnother={() => { setCredentialsResult(null); openCreate() }}
+        onViewProfile={() => {
+          const id = credentialsResult?.student.id
+          setCredentialsResult(null)
+          if (id) navigate(`/students/${id}`)
+        }}
+      />
 
       <ConfirmDialog
         open={!!deleting}

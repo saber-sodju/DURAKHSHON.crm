@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import type { DuplicateParentWarning } from './types'
 
 // Access token lives only in memory (never in localStorage) to reduce XSS impact.
 // A httpOnly refresh cookie keeps the session across page reloads.
@@ -70,9 +71,24 @@ export function apiErrorMessage(error: unknown): string {
     if (Array.isArray(detail)) {
       return detail.map((d: { msg?: string }) => d.msg ?? 'Validation error').join('; ')
     }
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      return String((detail as { message: unknown }).message)
+    }
     return error.message
   }
   return 'Unexpected error'
+}
+
+/** The student/parent-create endpoints return a structured 409 when a new parent's
+ * phone/email collides with an existing parent, so the UI can offer "link existing"
+ * instead of silently failing or creating a duplicate. */
+export function getDuplicateParents(error: unknown): DuplicateParentWarning[] | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 409) return null
+  const detail = (error.response?.data as { detail?: unknown })?.detail
+  if (detail && typeof detail === 'object' && (detail as { message?: string }).message === 'duplicate_parents') {
+    return (detail as { duplicates: DuplicateParentWarning[] }).duplicates
+  }
+  return null
 }
 
 export { tryRefresh }

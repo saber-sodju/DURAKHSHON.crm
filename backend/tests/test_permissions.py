@@ -14,7 +14,10 @@ class TestAuth:
     def test_password_hash_never_exposed(self, client, tokens):
         response = client.get("/api/users", headers=tokens["director"])
         assert response.status_code == 200
-        assert "password" not in response.text
+        # "must_change_password" is a legitimate boolean field; only the hash/raw
+        # password value must never appear
+        assert "password_hash" not in response.text
+        assert '"password":' not in response.text
         assert "hash" not in response.text
 
 

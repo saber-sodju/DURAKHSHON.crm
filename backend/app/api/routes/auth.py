@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -62,6 +64,7 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
     login_limiter.reset_failures(data.username)
     days = _refresh_days(data.remember_me)
     token = create_session(db, user.id, days, request.headers.get("user-agent", ""), ip)
+    user.last_login_at = datetime.now(timezone.utc)
     log_action(db, user, "login", "auth", detail=f"remember={data.remember_me}", ip=ip)
     db.commit()
 
@@ -151,6 +154,7 @@ def change_password(
     if not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     user.password_hash = hash_password(data.new_password)
+    user.must_change_password = False
     # changing the password kills every existing session for safety
     revoke_all_sessions(db, user.id)
     log_action(db, user, "change_password", "auth", ip=get_client_ip(request))

@@ -21,6 +21,7 @@ class MeResponse(ORMModel):
     role: str
     full_name: str
     is_active: bool
+    must_change_password: bool = False
     profile_id: int | None = None  # id of linked student/teacher/parent profile
 
 

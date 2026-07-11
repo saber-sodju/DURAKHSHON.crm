@@ -7,6 +7,7 @@ export interface Me {
   role: RoleName
   full_name: string
   is_active: boolean
+  must_change_password: boolean
   profile_id: number | null
 }
 
@@ -22,6 +23,65 @@ export interface Tag {
   name?: string
   first_name?: string
   last_name?: string
+  status?: string
+  relation?: string
+  phone?: string
+  email?: string
+  user_id?: number | null
+}
+
+export type RelationType = 'father' | 'mother' | 'guardian' | 'other'
+
+export interface ParentSearchResult {
+  id: number
+  full_name: string
+  phone: string
+  email: string
+  children_count: number
+  has_account: boolean
+}
+
+export interface ExistingParentLinkInput {
+  parent_id: number
+  relation: RelationType
+}
+
+export interface NewParentInput {
+  first_name: string
+  last_name: string
+  phone: string
+  email: string
+  relation: RelationType
+  notes: string
+  create_user_account: boolean
+  allow_duplicate: boolean
+}
+
+export interface GeneratedAccount {
+  role: 'student' | 'parent'
+  owner_name: string
+  username: string
+  temporary_password: string
+  user_id: number
+}
+
+export interface DuplicateParentWarning {
+  index: number
+  field: 'phone' | 'email'
+  value: string
+  parent: Parent
+}
+
+export interface StudentCreateResult {
+  student: Student
+  created_parents: Parent[]
+  linked_parents: Parent[]
+  accounts: GeneratedAccount[]
+}
+
+export interface ParentLinkResult {
+  parent: Parent
+  account: GeneratedAccount | null
 }
 
 export interface Student {
@@ -165,6 +225,8 @@ export interface AppUser {
   role: RoleName
   full_name: string
   is_active: boolean
+  must_change_password: boolean
+  last_login_at: string | null
   created_at: string
 }
 

@@ -164,3 +164,15 @@ def audit_logs(
         out.username = log.user.username if log.user else None
         items.append(out)
     return Page(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get("/{user_id}", response_model=UserOut)
+def get_user(
+    user_id: int,
+    _: User = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user

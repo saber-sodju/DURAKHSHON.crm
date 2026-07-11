@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -120,7 +121,11 @@ export default function Parents() {
               emptyTitle={t('parents.noParentsFound')}
               columns={[
                 { key: 'name', header: t('students.columnName'), primary: true,
-                  cell: (parent) => `${parent.first_name} ${parent.last_name}` },
+                  cell: (parent) => (
+                    <Link to={`/parents/${parent.id}`} className="font-semibold text-slate-800 hover:text-blue-600">
+                      {parent.first_name} {parent.last_name}
+                    </Link>
+                  ) },
                 { key: 'phone', header: t('students.columnPhone'), cell: (parent) => parent.phone || '—' },
                 { key: 'email', header: t('parents.columnEmail'), cell: (parent) => parent.email || '—' },
                 { key: 'children', header: t('parents.columnChildren'),

@@ -10,6 +10,11 @@ parent_students = Table(
     Base.metadata,
     Column("parent_id", ForeignKey("parents.id", ondelete="CASCADE"), primary_key=True),
     Column("student_id", ForeignKey("students.id", ondelete="CASCADE"), primary_key=True),
+    # relation_type/created_at are additive metadata: relationship-collection assignment
+    # (student.parents = [...]) still works unchanged since it only ever writes the two
+    # FK columns above; these two are only read/written directly by the relations service.
+    Column("relation_type", String(20), nullable=False, server_default=""),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
 
 

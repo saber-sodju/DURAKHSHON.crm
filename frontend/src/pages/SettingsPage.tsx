@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
-import { KeyRound, Languages } from 'lucide-react'
+import { KeyRound, Languages, ShieldAlert } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -42,6 +42,15 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
+      {user?.must_change_password && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <ShieldAlert size={20} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-bold">{t('settings.mustChangePasswordTitle')}</p>
+            <p className="mt-0.5">{t('settings.mustChangePasswordBody')}</p>
+          </div>
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <Card className="p-6">

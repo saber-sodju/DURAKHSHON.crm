@@ -5,6 +5,8 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.schemas.common import ORMModel
 
+RELATION_TYPES = ("father", "mother", "guardian", "other")
+
 
 class GroupTag(ORMModel):
     id: int
@@ -15,12 +17,18 @@ class ParentTag(ORMModel):
     id: int
     first_name: str
     last_name: str
+    phone: str = ""
+    email: str = ""
+    relation: str = ""
+    user_id: int | None = None
 
 
 class StudentTag(ORMModel):
     id: int
     first_name: str
     last_name: str
+    status: str = ""
+    relation: str = ""
 
 
 # ---------- Students ----------
@@ -51,9 +59,42 @@ class StudentBase(BaseModel):
         return v
 
 
+class ExistingParentLink(BaseModel):
+    parent_id: int
+    relation: str = Field(default="guardian")
+
+    @field_validator("relation")
+    @classmethod
+    def validate_relation(cls, v: str) -> str:
+        if v not in RELATION_TYPES:
+            raise ValueError(f"relation must be one of {RELATION_TYPES}")
+        return v
+
+
+class NewParentIn(BaseModel):
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(default="", max_length=30)
+    email: str = Field(default="", max_length=255)
+    relation: str = Field(default="guardian")
+    notes: str = Field(default="", max_length=5000)
+    create_user_account: bool = False
+    # director/admin override to knowingly create a duplicate-looking parent record
+    allow_duplicate: bool = False
+
+    @field_validator("relation")
+    @classmethod
+    def validate_relation(cls, v: str) -> str:
+        if v not in RELATION_TYPES:
+            raise ValueError(f"relation must be one of {RELATION_TYPES}")
+        return v
+
+
 class StudentCreate(StudentBase):
-    parent_ids: list[int] = []
     group_ids: list[int] = []
+    existing_parent_links: list[ExistingParentLink] = []
+    new_parents: list[NewParentIn] = []
+    create_student_user_account: bool = False
 
 
 class StudentUpdate(StudentBase):
@@ -151,3 +192,41 @@ class ParentOut(ORMModel):
     notes: str
     created_at: datetime
     children: list[StudentTag] = []
+
+
+class ParentSearchOut(BaseModel):
+    id: int
+    full_name: str
+    phone: str
+    email: str
+    children_count: int
+    has_account: bool
+
+
+# ---------- Account generation / student+parent creation workflow ----------
+
+class GeneratedAccountOut(BaseModel):
+    role: str
+    owner_name: str
+    username: str
+    temporary_password: str
+    user_id: int
+
+
+class DuplicateParentWarning(BaseModel):
+    index: int  # position in the new_parents list that collided
+    field: str  # "phone" | "email"
+    value: str
+    parent: ParentOut
+
+
+class StudentCreateResult(BaseModel):
+    student: StudentOut
+    created_parents: list[ParentOut] = []
+    linked_parents: list[ParentOut] = []
+    accounts: list[GeneratedAccountOut] = []
+
+
+class ParentLinkResult(BaseModel):
+    parent: ParentOut
+    account: GeneratedAccountOut | None = None
