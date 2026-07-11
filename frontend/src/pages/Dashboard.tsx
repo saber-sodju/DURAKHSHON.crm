@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   Users, BookUser, Boxes, Wallet, UserPlus, CalendarPlus, ClipboardCheck, BadgeDollarSign,
+  UserX, CalendarDays, FileSpreadsheet,
 } from 'lucide-react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -10,9 +11,10 @@ import {
 } from 'recharts'
 import { api } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import { Card, StatCard, Badge, Button, TableShell, Th, Td, EmptyState } from '../components/ui'
+import { Card, StatCard, Badge, Button, TableShell, Th, Td, EmptyState, MobileCardRow } from '../components/ui'
 import PageHeader from '../components/PageHeader'
-import { formatMoney, formatDate } from '../lib/utils'
+import MobileDashboardHero from '../components/MobileDashboardHero'
+import { formatMoney, formatDate, cn } from '../lib/utils'
 
 interface StaffDash {
   role: 'staff'
@@ -60,9 +62,10 @@ function AttendanceTodayCards({ stats }: { stats: Record<string, number> }) {
     { key: 'late', label: t('dashboard.todayLate'), color: 'border-amber-500 text-amber-600' },
   ]
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
       {cards.map((c) => (
-        <Card key={c.key} className={`border-l-4 p-5 ${c.color.split(' ')[0]}`}>
+        <Card key={c.key}
+              className={cn('border-l-4 p-5', c.color.split(' ')[0], c.key === 'late' && 'col-span-2 sm:col-span-1')}>
           <div className="text-sm text-slate-500">{c.label}</div>
           <div className={`mt-1 text-3xl font-extrabold ${c.color.split(' ')[1]}`}>{stats[c.key] ?? 0}</div>
         </Card>
@@ -84,19 +87,33 @@ function StaffDashboard({ data }: { data: StaffDash }) {
 
   return (
     <>
-      <PageHeader
-        title={t('dashboard.staffTitle', { name: user?.full_name || user?.username })}
-        subtitle={t('dashboard.staffSubtitle')}
+      <MobileDashboardHero
+        actionLabel={t('dashboard.addStudent')}
+        actionIcon={<UserPlus size={18} />}
+        onAction={() => navigate('/students?new=1')}
+        alerts={[
+          { icon: <Wallet size={18} />, labelKey: 'dashboard.alertOverduePayments', count: data.payments_this_month.overdue ?? 0, tone: 'red' },
+          { icon: <UserX size={18} />, labelKey: 'dashboard.alertAbsentToday', count: data.attendance_today.absent ?? 0, tone: 'amber' },
+          { icon: <CalendarDays size={18} />, labelKey: 'dashboard.alertClassesToday', count: data.todays_classes.length, tone: 'blue' },
+        ]}
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="hidden lg:block">
+        <PageHeader
+          title={t('dashboard.staffTitle', { name: user?.full_name || user?.username })}
+          subtitle={t('dashboard.staffSubtitle')}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard icon={<Users size={22} className="text-blue-600" />} accent="bg-blue-50"
                   value={data.active_students} label={t('dashboard.activeStudents')} />
         <StatCard icon={<BookUser size={22} className="text-emerald-600" />} accent="bg-emerald-50"
                   value={data.active_teachers} label={t('dashboard.activeTeachers')} />
         <StatCard icon={<Boxes size={22} className="text-cyan-600" />} accent="bg-cyan-50"
                   value={data.active_groups} label={t('dashboard.activeGroups')} />
-        <StatCard icon={<Wallet size={22} className="text-amber-600" />} accent="bg-amber-50"
-                  value={`${paid} / ${unpaidTotal}`} label={t('dashboard.paidUnpaidMonth')} />
+        <StatCard icon={<Wallet size={22} className="text-emerald-600" />} accent="bg-emerald-50"
+                  value={paid} label={t('dashboard.paidThisMonth')} />
+        <StatCard icon={<BadgeDollarSign size={22} className="text-amber-600" />} accent="bg-amber-50"
+                  value={unpaidTotal} label={t('dashboard.unpaidThisMonth')} className="col-span-2 sm:col-span-1" />
       </div>
 
       <div className="mt-6">
@@ -110,22 +127,37 @@ function StaffDashboard({ data }: { data: StaffDash }) {
             <Link to="/students"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
           {data.recent_students.length === 0 ? <EmptyState title={t('dashboard.noStudentsYet')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('students.columnName')}</Th><Th>{t('students.columnParent')}</Th><Th>{t('common.status')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('students.columnName')}</Th><Th>{t('students.columnParent')}</Th><Th>{t('common.status')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.recent_students.map((s) => (
+                      <tr key={s.id} className="hover:bg-slate-50">
+                        <Td>
+                          <Link to={`/students/${s.id}`} className="font-semibold text-blue-600 hover:underline">
+                            {s.name}
+                          </Link>
+                        </Td>
+                        <Td>{s.parent ?? '—'}</Td>
+                        <Td><Badge value={s.status} /></Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.recent_students.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50">
-                    <Td>
-                      <Link to={`/students/${s.id}`} className="font-semibold text-blue-600 hover:underline">
-                        {s.name}
-                      </Link>
-                    </Td>
-                    <Td>{s.parent ?? '—'}</Td>
-                    <Td><Badge value={s.status} /></Td>
-                  </tr>
+                  <MobileCardRow key={s.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <Link to={`/students/${s.id}`} className="truncate font-bold text-blue-600">{s.name}</Link>
+                      <Badge value={s.status} />
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{s.parent ?? '—'}</div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
 
@@ -135,19 +167,37 @@ function StaffDashboard({ data }: { data: StaffDash }) {
             <Link to="/payments"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
           {data.recent_payments.length === 0 ? <EmptyState title={t('dashboard.noPaymentsYet')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnGroup')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('common.status')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnGroup')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('common.status')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.recent_payments.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{p.student}</Td>
+                        <Td>{p.group || '—'}</Td>
+                        <Td>{formatMoney(p.amount)}</Td>
+                        <Td><Badge value={p.status} /></Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.recent_payments.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{p.student}</Td>
-                    <Td>{p.group || '—'}</Td>
-                    <Td>{formatMoney(p.amount)}</Td>
-                    <Td><Badge value={p.status} /></Td>
-                  </tr>
+                  <MobileCardRow key={p.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{p.student}</span>
+                      <Badge value={p.status} />
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-sm text-slate-500">
+                      <span>{p.group || '—'}</span>
+                      <span className="font-bold text-slate-700">{formatMoney(p.amount)}</span>
+                    </div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
       </div>
@@ -192,36 +242,66 @@ function StaffDashboard({ data }: { data: StaffDash }) {
         <Card>
           <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.todaysClasses')}</h2>
           {data.todays_classes.length === 0 ? <EmptyState title={t('dashboard.noClassesToday')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groups.columnTeacher')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groups.columnTeacher')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.todays_classes.map((c, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{c.group}</Td>
+                        <Td>{c.start_time}–{c.end_time}</Td>
+                        <Td>{c.teacher ?? '—'}</Td>
+                        <Td>{c.room || '—'}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.todays_classes.map((c, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{c.group}</Td>
-                    <Td>{c.start_time}–{c.end_time}</Td>
-                    <Td>{c.teacher ?? '—'}</Td>
-                    <Td>{c.room || '—'}</Td>
-                  </tr>
+                  <MobileCardRow key={i}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{c.group}</span>
+                      <span className="shrink-0 text-sm font-semibold text-slate-600">{c.start_time}–{c.end_time}</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{c.teacher ?? '—'}{c.room ? ` · ${c.room}` : ''}</div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
         <Card>
           <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.upcomingPayments')}</h2>
           {data.upcoming_payments.length === 0 ? <EmptyState title={t('dashboard.nothingDueSoon')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('payments.dueDate')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('payments.columnStudent')}</Th><Th>{t('payments.columnAmount')}</Th><Th>{t('payments.dueDate')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.upcoming_payments.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{p.student}</Td>
+                        <Td>{formatMoney(p.amount)}</Td>
+                        <Td>{formatDate(p.due_date)}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.upcoming_payments.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{p.student}</Td>
-                    <Td>{formatMoney(p.amount)}</Td>
-                    <Td>{formatDate(p.due_date)}</Td>
-                  </tr>
+                  <MobileCardRow key={p.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{p.student}</span>
+                      <span className="font-bold text-slate-700">{formatMoney(p.amount)}</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{t('payments.dueDate')}: {formatDate(p.due_date)}</div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
       </div>
@@ -246,7 +326,18 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
   const { t } = useTranslation()
   return (
     <>
-      <PageHeader title={t('dashboard.teacherWelcome', { name: user?.full_name || user?.username })} subtitle={t('dashboard.teacherSubtitle')} />
+      <MobileDashboardHero
+        actionLabel={t('dashboard.markAttendance')}
+        actionIcon={<ClipboardCheck size={18} />}
+        onAction={() => navigate('/attendance?mark=1')}
+        alerts={[
+          { icon: <UserX size={18} />, labelKey: 'dashboard.alertAbsentToday', count: data.attendance_today.absent ?? 0, tone: 'amber' },
+          { icon: <CalendarDays size={18} />, labelKey: 'dashboard.alertClassesToday', count: data.todays_lessons.length, tone: 'blue' },
+        ]}
+      />
+      <div className="hidden lg:block">
+        <PageHeader title={t('dashboard.teacherWelcome', { name: user?.full_name || user?.username })} subtitle={t('dashboard.teacherSubtitle')} />
+      </div>
       <AttendanceTodayCards stats={data.attendance_today} />
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
@@ -255,56 +346,101 @@ function TeacherDashboard({ data }: { data: TeacherDash }) {
             <Link to="/groups"><Button variant="secondary" size="sm">{t('common.viewAll')}</Button></Link>
           </div>
           {data.my_groups.length === 0 ? <EmptyState title={t('dashboard.noGroupsAssigned')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groups.columnCourse')}</Th><Th>{t('groups.columnStudents')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groups.columnCourse')}</Th><Th>{t('groups.columnStudents')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.my_groups.map((g) => (
+                      <tr key={g.id} className="hover:bg-slate-50">
+                        <Td>
+                          <Link to={`/groups/${g.id}`} className="font-semibold text-blue-600 hover:underline">{g.name}</Link>
+                        </Td>
+                        <Td>{g.course}</Td>
+                        <Td>{g.students}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.my_groups.map((g) => (
-                  <tr key={g.id} className="hover:bg-slate-50">
-                    <Td>
-                      <Link to={`/groups/${g.id}`} className="font-semibold text-blue-600 hover:underline">{g.name}</Link>
-                    </Td>
-                    <Td>{g.course}</Td>
-                    <Td>{g.students}</Td>
-                  </tr>
+                  <MobileCardRow key={g.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <Link to={`/groups/${g.id}`} className="truncate font-bold text-blue-600">{g.name}</Link>
+                      <span className="shrink-0 text-sm font-semibold text-slate-600">{g.students} {t('groups.columnStudents').toLowerCase()}</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{g.course}</div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
         <Card>
           <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.todaysLessons')}</h2>
           {data.todays_lessons.length === 0 ? <EmptyState title={t('dashboard.noLessonsToday')} /> : (
-            <TableShell>
-              <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead><tr><Th>{t('groups.columnGroup')}</Th><Th>{t('groupDetails.columnStudents')}</Th><Th>{t('groupDetails.columnRoom')}</Th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.todays_lessons.map((lesson, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{lesson.group}</Td>
+                        <Td>{lesson.start_time}–{lesson.end_time}</Td>
+                        <Td>{lesson.room || '—'}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {data.todays_lessons.map((lesson, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{lesson.group}</Td>
-                    <Td>{lesson.start_time}–{lesson.end_time}</Td>
-                    <Td>{lesson.room || '—'}</Td>
-                  </tr>
+                  <MobileCardRow key={i}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{lesson.group}</span>
+                      <span className="shrink-0 text-sm font-semibold text-slate-600">{lesson.start_time}–{lesson.end_time}</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{lesson.room || '—'}</div>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )}
         </Card>
       </div>
       <Card className="mt-6">
         <h2 className="px-5 pt-4 font-bold text-slate-800">{t('dashboard.recentGrades')}</h2>
         {data.recent_grades.length === 0 ? <EmptyState title={t('dashboard.noGradesYet')} /> : (
-          <TableShell>
-            <thead><tr><Th>{t('grades.columnStudent')}</Th><Th>{t('grades.columnExam')}</Th><Th>{t('grades.columnScore')}</Th><Th>%</Th></tr></thead>
-            <tbody className="divide-y divide-slate-100">
+          <>
+            <div className="hidden lg:block">
+              <TableShell>
+                <thead><tr><Th>{t('grades.columnStudent')}</Th><Th>{t('grades.columnExam')}</Th><Th>{t('grades.columnScore')}</Th><Th>%</Th></tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data.recent_grades.map((g, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <Td className="font-semibold">{g.student}</Td>
+                      <Td>{g.exam}</Td>
+                      <Td>{g.score}</Td>
+                      <Td>{g.percentage}%</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableShell>
+            </div>
+            <div className="space-y-2.5 p-3 lg:hidden">
               {data.recent_grades.map((g, i) => (
-                <tr key={i} className="hover:bg-slate-50">
-                  <Td className="font-semibold">{g.student}</Td>
-                  <Td>{g.exam}</Td>
-                  <Td>{g.score}</Td>
-                  <Td>{g.percentage}%</Td>
-                </tr>
+                <MobileCardRow key={i}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate font-bold text-slate-800">{g.student}</span>
+                    <span className="font-bold text-slate-700">{g.percentage}%</span>
+                  </div>
+                  <div className="mt-1 text-sm text-slate-500">{g.exam} · {g.score}</div>
+                </MobileCardRow>
               ))}
-            </tbody>
-          </TableShell>
+            </div>
+          </>
         )}
       </Card>
       <Card className="mt-6 p-5">
@@ -379,6 +515,7 @@ function StudentCard({ payload, title }: { payload: StudentPayload; title?: stri
 
 export default function Dashboard() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => (await api.get<Dash>('/dashboard')).data,
@@ -386,7 +523,7 @@ export default function Dashboard() {
 
   if (isLoading || !data) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="h-24 animate-pulse bg-slate-100">{null}</Card>
         ))}
@@ -399,14 +536,28 @@ export default function Dashboard() {
   if (data.role === 'student') {
     return (
       <>
-        <PageHeader title={t('dashboard.myDashboard')} subtitle={t('dashboard.myDashboardSubtitle')} />
+        <MobileDashboardHero
+          actionLabel={t('dashboard.mySchedule')}
+          actionIcon={<CalendarDays size={18} />}
+          onAction={() => navigate('/schedule')}
+        />
+        <div className="hidden lg:block">
+          <PageHeader title={t('dashboard.myDashboard')} subtitle={t('dashboard.myDashboardSubtitle')} />
+        </div>
         <StudentCard payload={data.me} title={t('dashboard.myOverview')} />
       </>
     )
   }
   return (
     <>
-      <PageHeader title={t('dashboard.myChildren')} subtitle={t('dashboard.myChildrenSubtitle')} />
+      <MobileDashboardHero
+        actionLabel={t('dashboard.viewResults')}
+        actionIcon={<FileSpreadsheet size={18} />}
+        onAction={() => navigate('/grades')}
+      />
+      <div className="hidden lg:block">
+        <PageHeader title={t('dashboard.myChildren')} subtitle={t('dashboard.myChildrenSubtitle')} />
+      </div>
       <div className="space-y-5">
         {data.children.length === 0 && <Card><EmptyState title={t('dashboard.noChildrenLinked')} /></Card>}
         {data.children.map((c) => <StudentCard key={c.id} payload={c} />)}

@@ -10,7 +10,7 @@ import { formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
 import {
   Button, Input, Select, Field, Badge, Card, Modal, ConfirmDialog,
-  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination,
+  TableShell, Th, Td, EmptyState, TableSkeleton, Pagination, MobileCardRow,
 } from '../components/ui'
 import { ResponsiveTable } from '../components/ResponsiveTable'
 
@@ -179,26 +179,44 @@ export default function UsersPage() {
             <EmptyState title={t('users.noAuditRecords')} />
           ) : (
             <>
-              <TableShell>
-                <thead className="bg-slate-50">
-                  <tr>
-                    <Th>{t('users.columnTime')}</Th><Th>{t('users.columnUser')}</Th><Th>{t('users.columnAction')}</Th>
-                    <Th>{t('users.columnEntity')}</Th><Th>{t('users.columnDetail')}</Th><Th>{t('users.columnIp')}</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {audit.items.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50">
-                      <Td className="whitespace-nowrap text-xs">{new Date(log.created_at).toLocaleString()}</Td>
-                      <Td className="font-semibold">{log.username ?? '—'}</Td>
-                      <Td><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold">{log.action}</span></Td>
-                      <Td>{log.entity}{log.entity_id ? ` #${log.entity_id}` : ''}</Td>
-                      <Td className="max-w-xs truncate text-slate-500">{log.detail || '—'}</Td>
-                      <Td className="text-slate-400">{log.ip_address || '—'}</Td>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <Th>{t('users.columnTime')}</Th><Th>{t('users.columnUser')}</Th><Th>{t('users.columnAction')}</Th>
+                      <Th>{t('users.columnEntity')}</Th><Th>{t('users.columnDetail')}</Th><Th>{t('users.columnIp')}</Th>
                     </tr>
-                  ))}
-                </tbody>
-              </TableShell>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {audit.items.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50">
+                        <Td className="whitespace-nowrap text-xs">{new Date(log.created_at).toLocaleString()}</Td>
+                        <Td className="font-semibold">{log.username ?? '—'}</Td>
+                        <Td><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold">{log.action}</span></Td>
+                        <Td>{log.entity}{log.entity_id ? ` #${log.entity_id}` : ''}</Td>
+                        <Td className="max-w-xs truncate text-slate-500">{log.detail || '—'}</Td>
+                        <Td className="text-slate-400">{log.ip_address || '—'}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
+                {audit.items.map((log) => (
+                  <MobileCardRow key={log.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-bold text-slate-800">{log.username ?? '—'}</span>
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-600">{log.action}</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-500">{log.entity}{log.entity_id ? ` #${log.entity_id}` : ''}</div>
+                    {log.detail && <div className="mt-1 truncate text-sm text-slate-500">{log.detail}</div>}
+                    <div className="mt-1.5 flex justify-between text-xs text-slate-400">
+                      <span>{new Date(log.created_at).toLocaleString()}</span>
+                      <span>{log.ip_address || '—'}</span>
+                    </div>
+                  </MobileCardRow>
+                ))}
+              </div>
               <Pagination page={audit.page} pageSize={audit.page_size} total={audit.total} onPage={setPage} />
             </>
           )

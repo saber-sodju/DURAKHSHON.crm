@@ -12,6 +12,7 @@ import { api } from '../lib/api'
 import { cn } from '../lib/utils'
 import type { RoleName } from '../lib/types'
 import LanguageSwitcher from './LanguageSwitcher'
+import MobileBottomNav from './MobileBottomNav'
 
 interface NavItem {
   to: string
@@ -183,10 +184,12 @@ export default function Layout() {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[color:var(--color-mobile-bg)] p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:p-6 sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bg-slate-100 lg:p-8">
           <Outlet />
         </main>
       </div>
+
+      <MobileBottomNav role={user.role} onMore={() => setMobileOpen(true)} />
     </div>
   )
 }

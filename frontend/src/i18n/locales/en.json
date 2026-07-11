@@ -96,6 +96,10 @@
     "logout": "Log out",
     "language": "Language"
   },
+  "bottomNav": {
+    "home": "Home",
+    "more": "More"
+  },
   "login": {
     "appTitle": "DURAKHSHON",
     "appSubtitle": "Learning Center CRM",
@@ -129,6 +133,17 @@
     "deactivateUserMessage": "{{username}} will no longer be able to sign in."
   },
   "dashboard": {
+    "greetingMorning": "Good morning, {{name}}!",
+    "greetingAfternoon": "Good afternoon, {{name}}!",
+    "greetingEvening": "Good evening, {{name}}!",
+    "greetingNight": "Good night, {{name}}!",
+    "alertOverduePayments": "Overdue payments: {{count}}",
+    "alertAbsentToday": "Absent today: {{count}}",
+    "alertClassesToday": "Classes today: {{count}}",
+    "viewResults": "View Results",
+    "mySchedule": "My Schedule",
+    "paidThisMonth": "Paid This Month",
+    "unpaidThisMonth": "Unpaid This Month",
     "staffTitle": "Welcome back, {{name}}!",
     "staffSubtitle": "Here's what's happening at the learning center today.",
     "activeStudents": "Active Students",

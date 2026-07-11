@@ -4,6 +4,11 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
+  /* warm app-like palette used only on the mobile shell (<lg); desktop keeps slate */
+  --color-mobile-bg: #f5efe3;
+  --color-mobile-card: #fffdf8;
+  --color-mobile-muted: #7a6a55;
+  --color-mobile-gold: #d6b23f;
 }
 
 html, body, #root {
@@ -27,6 +32,16 @@ body {
   input[type="date"], input[type="time"], input[type="number"] {
     font-size: 16px; /* stops iOS Safari from zooming in on focus */
   }
+}
+
+/* bottom padding that clears the phone's home-bar / gesture area */
+.safe-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* fixed mobile bottom navigation bar: own safe-area padding, sits above content */
+.mobile-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 ::-webkit-scrollbar {

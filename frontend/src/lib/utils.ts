@@ -24,3 +24,19 @@ export function formatMoney(value: string | number | null | undefined): string {
 export function formatTime(value: string): string {
   return value.slice(0, 5)
 }
+
+/** time-of-day greeting key for the mobile dashboard hero ("Good morning, {{name}}!" etc.) */
+export function greetingKey(date: Date = new Date()): 'greetingMorning' | 'greetingAfternoon' | 'greetingEvening' | 'greetingNight' {
+  const hour = date.getHours()
+  if (hour >= 5 && hour < 12) return 'greetingMorning'
+  if (hour >= 12 && hour < 18) return 'greetingAfternoon'
+  if (hour >= 18 && hour < 23) return 'greetingEvening'
+  return 'greetingNight'
+}
+
+export function formatDateWithWeekday(date: Date = new Date()): string {
+  const lang = i18n.resolvedLanguage ?? i18n.language ?? 'en'
+  return date.toLocaleDateString([lang, 'ru-RU', 'en-US'], {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+  })
+}

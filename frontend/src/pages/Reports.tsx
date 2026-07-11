@@ -6,7 +6,7 @@ import { api } from '../lib/api'
 import type { Page, Group } from '../lib/types'
 import { formatMoney } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
-import { Button, Select, Input, Card, Badge, TableShell, Th, Td, EmptyState, TableSkeleton } from '../components/ui'
+import { Button, Select, Input, Card, Badge, TableShell, Th, Td, EmptyState, TableSkeleton, MobileCardRow } from '../components/ui'
 
 type Tab = 'attendance' | 'payments' | 'progress' | 'workload'
 
@@ -116,27 +116,49 @@ export default function Reports() {
         {tab === 'attendance' && (
           loadingAttendance ? <TableSkeleton cols={7} /> :
           !attendance?.items?.length ? <EmptyState title={t('reports.noDataFilters')} /> : (
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnPresent')}</Th><Th>{t('reports.columnAbsent')}</Th>
-                  <Th>{t('reports.columnLate')}</Th><Th>{t('reports.columnExcused')}</Th><Th>{t('reports.columnTotal')}</Th><Th>{t('reports.columnAttendancePct')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnPresent')}</Th><Th>{t('reports.columnAbsent')}</Th>
+                      <Th>{t('reports.columnLate')}</Th><Th>{t('reports.columnExcused')}</Th><Th>{t('reports.columnTotal')}</Th><Th>{t('reports.columnAttendancePct')}</Th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {attendance.items.map((r: Record<string, number | string>) => (
+                      <tr key={r.student_id as number} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{r.student_name}</Td>
+                        <Td>{r.present}</Td><Td>{r.absent}</Td><Td>{r.late}</Td><Td>{r.excused}</Td><Td>{r.total}</Td>
+                        <Td>
+                          <span className={`font-bold ${Number(r.attendance_pct) >= 80 ? 'text-emerald-600' : Number(r.attendance_pct) >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                            {r.attendance_pct}%
+                          </span>
+                        </Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {attendance.items.map((r: Record<string, number | string>) => (
-                  <tr key={r.student_id as number} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{r.student_name}</Td>
-                    <Td>{r.present}</Td><Td>{r.absent}</Td><Td>{r.late}</Td><Td>{r.excused}</Td><Td>{r.total}</Td>
-                    <Td>
+                  <MobileCardRow key={r.student_id as number}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{r.student_name}</span>
                       <span className={`font-bold ${Number(r.attendance_pct) >= 80 ? 'text-emerald-600' : Number(r.attendance_pct) >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                         {r.attendance_pct}%
                       </span>
-                    </Td>
-                  </tr>
+                    </div>
+                    <dl className="mt-2 grid grid-cols-2 gap-1.5 text-sm">
+                      <div className="flex justify-between"><dt className="text-slate-500">{t('reports.columnPresent')}</dt><dd className="font-semibold text-slate-700">{r.present}</dd></div>
+                      <div className="flex justify-between"><dt className="text-slate-500">{t('reports.columnAbsent')}</dt><dd className="font-semibold text-slate-700">{r.absent}</dd></div>
+                      <div className="flex justify-between"><dt className="text-slate-500">{t('reports.columnLate')}</dt><dd className="font-semibold text-slate-700">{r.late}</dd></div>
+                      <div className="flex justify-between"><dt className="text-slate-500">{t('reports.columnExcused')}</dt><dd className="font-semibold text-slate-700">{r.excused}</dd></div>
+                    </dl>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )
         )}
 
@@ -157,26 +179,45 @@ export default function Reports() {
                 ))}
               </div>
               {!payments.items.length ? <EmptyState title={t('reports.noPayments')} /> : (
-                <TableShell>
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnGroup')}</Th><Th>{t('reports.columnPeriod')}</Th>
-                      <Th>{t('reports.columnAmount')}</Th><Th>{t('reports.columnPaid')}</Th><Th>{t('reports.columnStatus')}</Th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
+                <>
+                  <div className="hidden lg:block">
+                    <TableShell>
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnGroup')}</Th><Th>{t('reports.columnPeriod')}</Th>
+                          <Th>{t('reports.columnAmount')}</Th><Th>{t('reports.columnPaid')}</Th><Th>{t('reports.columnStatus')}</Th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {payments.items.map((p: Record<string, string | number>) => (
+                          <tr key={p.id as number} className="hover:bg-slate-50">
+                            <Td className="font-semibold">{p.student_name}</Td>
+                            <Td>{p.group_name || '—'}</Td>
+                            <Td>{String(p.month).padStart(2, '0')}/{p.year}</Td>
+                            <Td>{formatMoney(p.amount as number)}</Td>
+                            <Td>{formatMoney(p.paid_amount as number)}</Td>
+                            <Td><Badge value={p.status as string} /></Td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </TableShell>
+                  </div>
+                  <div className="space-y-2.5 p-3 lg:hidden">
                     {payments.items.map((p: Record<string, string | number>) => (
-                      <tr key={p.id as number} className="hover:bg-slate-50">
-                        <Td className="font-semibold">{p.student_name}</Td>
-                        <Td>{p.group_name || '—'}</Td>
-                        <Td>{String(p.month).padStart(2, '0')}/{p.year}</Td>
-                        <Td>{formatMoney(p.amount as number)}</Td>
-                        <Td>{formatMoney(p.paid_amount as number)}</Td>
-                        <Td><Badge value={p.status as string} /></Td>
-                      </tr>
+                      <MobileCardRow key={p.id as number}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="truncate font-bold text-slate-800">{p.student_name}</span>
+                          <Badge value={p.status as string} />
+                        </div>
+                        <div className="mt-1 text-sm text-slate-500">{p.group_name || '—'} · {String(p.month).padStart(2, '0')}/{p.year}</div>
+                        <div className="mt-1.5 flex justify-between text-sm">
+                          <span className="text-slate-500">{t('reports.columnAmount')}: <b className="text-slate-700">{formatMoney(p.amount as number)}</b></span>
+                          <span className="text-slate-500">{t('reports.columnPaid')}: <b className="text-slate-700">{formatMoney(p.paid_amount as number)}</b></span>
+                        </div>
+                      </MobileCardRow>
                     ))}
-                  </tbody>
-                </TableShell>
+                  </div>
+                </>
               )}
             </>
           )
@@ -185,50 +226,88 @@ export default function Reports() {
         {tab === 'progress' && (
           loadingProgress ? <TableSkeleton cols={5} /> :
           !progress?.items?.length ? <EmptyState title={t('reports.noGradesRecorded')} /> : (
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnExamsTaken')}</Th>
-                  <Th>{t('reports.columnAveragePct')}</Th><Th>{t('reports.columnBestPct')}</Th><Th>{t('reports.columnWorstPct')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <Th>{t('reports.columnStudent')}</Th><Th>{t('reports.columnExamsTaken')}</Th>
+                      <Th>{t('reports.columnAveragePct')}</Th><Th>{t('reports.columnBestPct')}</Th><Th>{t('reports.columnWorstPct')}</Th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {progress.items.map((r: Record<string, number | string>) => (
+                      <tr key={r.student_id as number} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{r.student_name}</Td>
+                        <Td>{r.exams_taken}</Td>
+                        <Td className="font-bold">{r.avg_percentage}%</Td>
+                        <Td className="text-emerald-600">{r.best}%</Td>
+                        <Td className="text-red-600">{r.worst}%</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {progress.items.map((r: Record<string, number | string>) => (
-                  <tr key={r.student_id as number} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{r.student_name}</Td>
-                    <Td>{r.exams_taken}</Td>
-                    <Td className="font-bold">{r.avg_percentage}%</Td>
-                    <Td className="text-emerald-600">{r.best}%</Td>
-                    <Td className="text-red-600">{r.worst}%</Td>
-                  </tr>
+                  <MobileCardRow key={r.student_id as number}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{r.student_name}</span>
+                      <span className="font-bold text-slate-700">{r.avg_percentage}%</span>
+                    </div>
+                    <dl className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
+                      <div><dt className="text-slate-500">{t('reports.columnExamsTaken')}</dt><dd className="font-bold text-slate-700">{r.exams_taken}</dd></div>
+                      <div><dt className="text-slate-500">{t('reports.columnBestPct')}</dt><dd className="font-bold text-emerald-600">{r.best}%</dd></div>
+                      <div><dt className="text-slate-500">{t('reports.columnWorstPct')}</dt><dd className="font-bold text-red-600">{r.worst}%</dd></div>
+                    </dl>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )
         )}
 
         {tab === 'workload' && (
           loadingWorkload ? <TableSkeleton cols={5} /> :
           !workload?.items?.length ? <EmptyState title={t('reports.noActiveTeachers')} /> : (
-            <TableShell>
-              <thead className="bg-slate-50">
-                <tr>
-                  <Th>{t('reports.columnTeacher')}</Th><Th>{t('reports.columnSubject')}</Th><Th>{t('reports.columnGroups')}</Th>
-                  <Th>{t('reports.columnStudents')}</Th><Th>{t('reports.columnWeeklyLessons')}</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              <div className="hidden lg:block">
+                <TableShell>
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <Th>{t('reports.columnTeacher')}</Th><Th>{t('reports.columnSubject')}</Th><Th>{t('reports.columnGroups')}</Th>
+                      <Th>{t('reports.columnStudents')}</Th><Th>{t('reports.columnWeeklyLessons')}</Th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {workload.items.map((r: Record<string, number | string>) => (
+                      <tr key={r.teacher_id as number} className="hover:bg-slate-50">
+                        <Td className="font-semibold">{r.teacher_name}</Td>
+                        <Td>{r.subject || '—'}</Td>
+                        <Td>{r.groups}</Td>
+                        <Td>{r.students}</Td>
+                        <Td>{r.weekly_lessons}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableShell>
+              </div>
+              <div className="space-y-2.5 p-3 lg:hidden">
                 {workload.items.map((r: Record<string, number | string>) => (
-                  <tr key={r.teacher_id as number} className="hover:bg-slate-50">
-                    <Td className="font-semibold">{r.teacher_name}</Td>
-                    <Td>{r.subject || '—'}</Td>
-                    <Td>{r.groups}</Td>
-                    <Td>{r.students}</Td>
-                    <Td>{r.weekly_lessons}</Td>
-                  </tr>
+                  <MobileCardRow key={r.teacher_id as number}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-bold text-slate-800">{r.teacher_name}</span>
+                      <span className="text-sm text-slate-500">{r.subject || '—'}</span>
+                    </div>
+                    <dl className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
+                      <div><dt className="text-slate-500">{t('reports.columnGroups')}</dt><dd className="font-bold text-slate-700">{r.groups}</dd></div>
+                      <div><dt className="text-slate-500">{t('reports.columnStudents')}</dt><dd className="font-bold text-slate-700">{r.students}</dd></div>
+                      <div><dt className="text-slate-500">{t('reports.columnWeeklyLessons')}</dt><dd className="font-bold text-slate-700">{r.weekly_lessons}</dd></div>
+                    </dl>
+                  </MobileCardRow>
                 ))}
-              </tbody>
-            </TableShell>
+              </div>
+            </>
           )
         )}
       </Card>

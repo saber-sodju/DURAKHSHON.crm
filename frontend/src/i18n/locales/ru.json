@@ -96,6 +96,10 @@
     "logout": "Выйти",
     "language": "Язык"
   },
+  "bottomNav": {
+    "home": "Главная",
+    "more": "Ещё"
+  },
   "login": {
     "appTitle": "DURAKHSHON",
     "appSubtitle": "CRM учебного центра",
@@ -129,6 +133,17 @@
     "deactivateUserMessage": "{{username}} больше не сможет войти в систему."
   },
   "dashboard": {
+    "greetingMorning": "Доброе утро, {{name}}!",
+    "greetingAfternoon": "Добрый день, {{name}}!",
+    "greetingEvening": "Добрый вечер, {{name}}!",
+    "greetingNight": "Доброй ночи, {{name}}!",
+    "alertOverduePayments": "Просрочено оплат: {{count}}",
+    "alertAbsentToday": "Отсутствовало сегодня: {{count}}",
+    "alertClassesToday": "Занятий сегодня: {{count}}",
+    "viewResults": "Посмотреть результаты",
+    "mySchedule": "Моё расписание",
+    "paidThisMonth": "Оплачено в этом месяце",
+    "unpaidThisMonth": "Не оплачено в этом месяце",
     "staffTitle": "С возвращением, {{name}}!",
     "staffSubtitle": "Вот что происходит в учебном центре сегодня.",
     "activeStudents": "Активных студентов",

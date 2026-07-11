@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { TableShell, Th, Td, EmptyState } from './ui'
+import { TableShell, Th, Td, EmptyState, MobileCardRow } from './ui'
 
 export interface Column<T> {
   /** stable key */
@@ -62,9 +62,9 @@ export function ResponsiveTable<T>({ columns, rows, rowKey, emptyTitle, emptyHin
       </div>
 
       {/* mobile cards */}
-      <div className="divide-y divide-slate-100 sm:hidden">
+      <div className="space-y-2.5 bg-[color:var(--color-mobile-bg)]/50 p-2.5 sm:hidden">
         {rows.map((row) => (
-          <div key={rowKey(row)} className="p-4">
+          <MobileCardRow key={rowKey(row)}>
             {primary && <div className="mb-2 text-base font-bold text-slate-800">{primary.cell(row)}</div>}
             <dl className="space-y-1.5">
               {details.map((c) => (
@@ -74,8 +74,8 @@ export function ResponsiveTable<T>({ columns, rows, rowKey, emptyTitle, emptyHin
                 </div>
               ))}
             </dl>
-            {actions && <div className="mt-3 flex justify-end gap-1">{actions.cell(row)}</div>}
-          </div>
+            {actions && <div className="mt-3 flex justify-end gap-1 border-t border-slate-100 pt-3">{actions.cell(row)}</div>}
+          </MobileCardRow>
         ))}
       </div>
     </>

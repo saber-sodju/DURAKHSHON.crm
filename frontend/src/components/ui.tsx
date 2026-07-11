@@ -131,7 +131,16 @@ export function Badge({ value, className }: { value: string; className?: string 
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn('rounded-xl border border-slate-200 bg-white shadow-sm', className)}>
+    <div className={cn('rounded-2xl border border-slate-200 bg-white shadow-md lg:rounded-xl lg:shadow-sm', className)}>
+      {children}
+    </div>
+  )
+}
+
+/** A single elevated row-card used by mobile list/card views (app-like, spaced, shadowed). */
+export function MobileCardRow({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('rounded-2xl border border-slate-100 bg-white p-4 shadow-sm', className)}>
       {children}
     </div>
   )
@@ -285,16 +294,17 @@ export function Pagination({ page, pageSize, total, onPage }: {
 
 // ---------- Stat card ----------
 
-export function StatCard({ icon, value, label, accent }: {
+export function StatCard({ icon, value, label, accent, className }: {
   icon: ReactNode
   value: ReactNode
   label: string
   accent: string
+  className?: string
 }) {
   return (
-    <Card className="flex items-center gap-4 p-5">
+    <Card className={cn('flex items-center gap-4 p-5', className)}>
       <div className={cn('rounded-xl p-3', accent)}>{icon}</div>
-      <div>
+      <div className="min-w-0">
         <div className="text-2xl font-extrabold text-slate-800">{value}</div>
         <div className="text-sm text-slate-500">{label}</div>
       </div>

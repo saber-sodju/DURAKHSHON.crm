@@ -96,6 +96,10 @@
     "logout": "Баромадан",
     "language": "Забон"
   },
+  "bottomNav": {
+    "home": "Асосӣ",
+    "more": "Бештар"
+  },
   "login": {
     "appTitle": "DURAKHSHON",
     "appSubtitle": "CRM-и маркази таълимӣ",
@@ -129,6 +133,17 @@
     "deactivateUserMessage": "{{username}} дигар наметавонад ба низом ворид шавад."
   },
   "dashboard": {
+    "greetingMorning": "Субҳ ба хайр, {{name}}!",
+    "greetingAfternoon": "Рӯз ба хайр, {{name}}!",
+    "greetingEvening": "Бегоҳ ба хайр, {{name}}!",
+    "greetingNight": "Шаб ба хайр, {{name}}!",
+    "alertOverduePayments": "Пардохтҳои мӯҳлаташ гузашта: {{count}}",
+    "alertAbsentToday": "Имрӯз ғоибанд: {{count}}",
+    "alertClassesToday": "Дарсҳои имрӯз: {{count}}",
+    "viewResults": "Дидани натиҷаҳо",
+    "mySchedule": "Ҷадвали ман",
+    "paidThisMonth": "Пардохтшуда дар ин моҳ",
+    "unpaidThisMonth": "Пардохтнашуда дар ин моҳ",
     "staffTitle": "Хуш омадед, {{name}}!",
     "staffSubtitle": "Имрӯз дар маркази таълимӣ чунин рӯй медиҳад.",
     "activeStudents": "Донишҷӯёни фаъол",
