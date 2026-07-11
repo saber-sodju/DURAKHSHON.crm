@@ -31,6 +31,10 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
+    environment:
+      # nginx proxies /api to this upstream (substituted into the config at start)
+      BACKEND_ORIGIN: http://backend:8000
+      BACKEND_HOST: backend:8000
     ports:
       - "3000:80"
     depends_on:

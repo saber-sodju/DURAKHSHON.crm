@@ -4,14 +4,14 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# When set, bakes an absolute backend URL into the build so the browser calls the
-# backend directly (e.g. on Railway, where frontend and backend are separate origins).
-# Left unset, the app calls the relative '/api' path proxied by nginx below.
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# The app always calls the relative '/api' path; nginx below proxies it to the
+# backend (BACKEND_ORIGIN env var). Same-origin keeps the refresh cookie
+# first-party, which is required for "remember me" on iPhone Safari.
 RUN npm run build
 
 FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# the nginx image entrypoint envsubst's ${BACKEND_ORIGIN}/${BACKEND_HOST} from the
+# environment into /etc/nginx/conf.d/default.conf at container start
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80

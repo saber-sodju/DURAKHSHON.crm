@@ -1,0 +1,31 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy the API through the frontend's own origin so the refresh cookie is a
+    # FIRST-party cookie. iPhone Safari (ITP) blocks all third-party cookies, so
+    # calling the backend on a different domain silently breaks "remember me" on
+    # phones. BACKEND_ORIGIN/BACKEND_HOST are substituted at container start:
+    #   docker-compose:  http://backend:8000            / backend:8000
+    #   Railway:         https://backend-....railway.app / backend-....railway.app
+    location /api/ {
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_set_header Host ${BACKEND_HOST};
+        proxy_ssl_server_name on;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "same-origin" always;
+}
